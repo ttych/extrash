@@ -1,0 +1,72 @@
+#!/bin/sh
+
+TMPDIR="${TMPDIR:-/tmp}"
+LISTEN="${LISTEN:-localhost}"
+PORT="${PORT:-8765}"
+
+PROXY="${PROXY:-$http_proxy}"
+PROXY="${PROXY:-$HTTP_PROXY}"
+
+[ -z "$PROXY" ] && {
+    echo >&2 'No HTTP_PROXY or http_proxy conf set'
+    exit 1
+}
+
+PROXY_TMP="${PROXY#http://}"
+PROXY_TMP="${PROXY_TMP#https://}"
+PROXY_TMP="${PROXY_TMP%/}"
+PROXY_PORT="${PROXY_TMP##*:}"
+PROXY_TMP="${PROXY_TMP%:*}"
+PROXY_AUTH="${PROXY_TMP%%@*}"
+PROXY_HOST="${PROXY_TMP#*@}"
+
+SQUID_DIR="$HOME/etc/squid"
+SQUID_CONF="$SQUID_DIR/squid.local.$(hostname).conf"
+SQUID_DATA="$TMPDIR/$USER/squid"
+
+dump_squid_conf()
+{
+    cat <<EOF
+
+# only access from localhost is allowed
+acl localhost src 127.0.0.1/32
+acl all src all
+http_access allow localhost
+http_access deny all
+icp_access deny all
+
+never_direct allow all
+
+# turn off cache
+#cache_dir null /tmp
+cache_dir ufs $SQUID_DATA 100 16 256
+cache deny all
+
+access_log $SQUID_DATA/access.log squid
+pid_filename $SQUID_DATA/squid.pid
+cache_log $SQUID_DATA/cachem.log
+
+# turn off proxy-headers
+via off
+forwarded_for off
+
+# describe external proxy server
+cache_peer $PROXY_HOST parent $PROXY_PORT 0 no-query default proxy-only login=$PROXY_AUTH
+http_port $PORT
+acl port$PORT myport $PORT
+cache_peer_access $PROXY_HOST allow port$PORT
+
+EOF
+}
+
+start_squid()
+{
+    squid -f "$SQUID_CONF" -N -z
+    squid -f "$SQUID_CONF" -N
+}
+
+mkdir -p "$SQUID_DIR" &&
+    chmod 700 "$SQUID_DIR" &&
+    mkdir -p "$SQUID_DATA" &&
+    dump_squid_conf > "$SQUID_CONF" &&
+    start_squid
