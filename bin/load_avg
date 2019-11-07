@@ -43,7 +43,7 @@ load_avg()
     if [ -z "$load_average" ] || [ -z "$cpus" ]; then
         return 0
     fi
-    echo "$load_average/$cpus"
+    printf "$format" "$load_average/$cpus"
 }
 
 load_avg_tmux()
@@ -51,7 +51,7 @@ load_avg_tmux()
     if [ -z "$load_average" ] || [ -z "$cpus" ]; then
         return 0
     fi
-    echo "#[fg=${load_average_color}][l:$load_average/$cpus]#[fg=default]"
+    printf "$format" "#[fg=${load_average_color}][l:$load_average/$cpus]#[fg=default]"
 }
 
 action=load_avg
@@ -60,6 +60,8 @@ while getopts :t opt; do
         t) action=load_avg_tmux ;;
     esac
 done
+shift $(($OPTIND - 1))
+format="${1:-%s}"
 
 load_avg_info
 $action

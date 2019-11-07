@@ -58,7 +58,7 @@ battery()
     if [ -z "$battery_state" ] || [ -z "$battery_percentage" ]; then
         return 0
     fi
-    echo "$battery_state/$battery_percentage"
+    printf "$format" "$battery_state/$battery_percentage"
 }
 
 battery_tmux()
@@ -66,7 +66,7 @@ battery_tmux()
     if [ -z "$battery_state" ] || [ -z "$battery_percentage" ]; then
         return 0
     fi
-    echo "#[fg=${battery_color}][${battery_state_l}${battery_percentage}]#[fg=default]"
+    printf "$format" "#[fg=${battery_color}][${battery_state_l}${battery_percentage}]#[fg=default]"
 }
 
 action=battery
@@ -75,6 +75,8 @@ while getopts :t opt; do
         t) action=battery_tmux ;;
     esac
 done
+shift $(($OPTIND - 1))
+format="${1:-%s}"
 
 battery_info
 $action
