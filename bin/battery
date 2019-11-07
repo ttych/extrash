@@ -25,20 +25,26 @@ upower_info()
 
 battery_info()
 {
-    upower_info
-    case "$upower_state" in
-        discharging)
-            battery_state=discharging
-            battery_state_l=-
-            ;;
-        charging)
-            battery_state=charging
-            battery_state_l=+
-            ;;
-    esac
+    battery_state=
+    battery_state_l=
+    battery_percentage=
+    battery_percentage_s=
+    battery_color=$GREEN
+
+    upower_info || return 1
+
+    battery_state="$upower_state"
     battery_percentage="$upower_percentage"
     battery_percentage_s="${battery_percentage%%%}"
-    battery_color=$GREEN
+
+    case "$battery_state" in
+        fully-charged)
+            battery_state_l='=' ;;
+        discharging)
+            battery_state_l=- ;;
+        charging)
+            battery_state_l=+ ;;
+    esac
     case "$battery_percentage_s" in
         0*|1?|2?|3[0-5])
             battery_color=$RED ;;
@@ -49,11 +55,17 @@ battery_info()
 
 battery()
 {
+    if [ -z "$battery_state" ] || [ -z "$battery_percentage" ]; then
+        return 0
+    fi
     echo "$battery_state/$battery_percentage"
 }
 
 battery_tmux()
 {
+    if [ -z "$battery_state" ] || [ -z "$battery_percentage" ]; then
+        return 0
+    fi
     echo "#[fg=${battery_color}][${battery_state_l}${battery_percentage}]#[fg=default]"
 }
 
