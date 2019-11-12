@@ -5,9 +5,9 @@ set -e
 
 BATTERY="${BATTERY:-/org/freedesktop/UPower/devices/battery_BAT0}"
 
-GREEN=green
-RED=red
-ORANGE=#d75f00
+OK_C=green
+ALERT_C=red
+WARN_C=#ffff00
 
 upower_cmd()
 {
@@ -29,7 +29,7 @@ battery_info()
     battery_state_l=
     battery_percentage=
     battery_percentage_s=
-    battery_color=$GREEN
+    battery_color=$OK_C
 
     upower_info || return 1
 
@@ -47,9 +47,9 @@ battery_info()
     esac
     case "$battery_percentage_s" in
         0*|1?|2?|3[0-5])
-            battery_color=$RED ;;
+            battery_color=$ALERT_C ;;
         3*|4*|5*|6[0-5])
-            battery_color=$ORANGE ;;
+            battery_color=$WARN_C ;;
     esac
 }
 

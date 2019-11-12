@@ -3,9 +3,9 @@
 
 set -e
 
-GREEN=green
-RED=red
-ORANGE=#d75f00
+OK_C=green
+ALERT_C=red
+WARN_C=#ffff00
 
 cpus()
 {
@@ -30,11 +30,11 @@ load_avg_info()
     fi
 
     if [ $load_average_percentage -le 35 ]; then
-        load_average_color=$GREEN
+        load_average_color=$OK_C
     elif [ $load_average_percentage -le 65 ]; then
-        load_average_color=$ORANGE
+        load_average_color=$WARN_C
     else
-        load_average_color=$$RED
+        load_average_color=$ALERT_C
     fi
 }
 
