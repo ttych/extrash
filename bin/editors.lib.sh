@@ -80,26 +80,37 @@ _emacsclient()
 #     ALTERNATE_EDITOR="" TMPDIR="/tmp" emacs --daemon
 # }
 
+ee_c()
+(
+    export ALTERNATE_EDITOR=""
+    export TMPDIR="${TMPDIR:-/tmp}"
+    _emacsclient "$@"
+)
+ee_e()
+(
+    export ALTERNATE_EDITOR=""
+    export TMPDIR="${TMPDIR:-/tmp}"
+    _emacs "$@"
+)
 eex()
 {
-    ALTERNATE_EDITOR="" TMPDIR="/tmp" _emacsclient --create-frame "$@" &
+    ee_c --create-frame "$@" &
 }
-
 ee()
 {
-    ALTERNATE_EDITOR="" TMPDIR="/tmp" _emacsclient --tty "$@"
+    ee_c --tty "$@"
 }
 eek()
 {
-    ee -e '(kill-emacs)'
+    ee_c -e '(kill-emacs)'
 }
 ees()
 {
-    ee -e '(client-save-kill-emacs)'
+    ee_c -e '(client-save-kill-emacs)'
 }
 eed()
 {
-    ALTERNATE_EDITOR="" TMPDIR="/tmp" emacs --daemon
+    ee_e --daemon
 }
 
 e()
