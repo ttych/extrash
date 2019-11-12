@@ -16,9 +16,9 @@ _emacs_guess()
         _EMACS=${_EMACS:-:}
     fi
 }
+_emacs_guess
 _emacs()
 {
-    _emacs_guess
     $_EMACS "$@"
 }
 
@@ -57,9 +57,10 @@ _emacsclient_guess()
          _EMACSCLIENT=${_EMACSCLIENT:-:}
     fi
 }
+_emacsclient_guess
+
 _emacsclient()
 {
-    _emacsclient_guess
     $_EMACSCLIENT "$@"
 }
 
@@ -80,42 +81,38 @@ _emacsclient()
 #     ALTERNATE_EDITOR="" TMPDIR="/tmp" emacs --daemon
 # }
 
-ee_c()
-(
-    export ALTERNATE_EDITOR=""
-    export TMPDIR="${TMPDIR:-/tmp}"
-    _emacsclient "$@"
-)
-ee_e()
-(
-    export ALTERNATE_EDITOR=""
-    export TMPDIR="${TMPDIR:-/tmp}"
-    _emacs "$@"
-)
-eex()
+ec_c()
 {
-    ee_c --create-frame "$@" &
+    TMPDIR="${TMPDIR:-/tmp}" _emacsclient --alternate-editor="$ALTERNATE_EDITOR" "$@"
 }
-ee()
+ec_e()
 {
-    ee_c --tty "$@"
+    TMPDIR="${TMPDIR:-/tmp}" _emacs --alternate-editor="$ALTERNATE_EDITOR" "$@"
 }
-eek()
+ecx()
 {
-    ee_c -e '(kill-emacs)'
+    ec_c --create-frame "$@" &
 }
-ees()
+ec()
 {
-    ee_c -e '(client-save-kill-emacs)'
+    ec_c --tty "$@"
 }
-eed()
+eck()
 {
-    ee_e --daemon
+    ec_c -e '(kill-emacs)'
+}
+ecs()
+{
+    ec_c -e '(client-save-kill-emacs)'
+}
+ecd()
+{
+    ec_e --daemon
 }
 
 e()
 {
-    ee "$@"
+    ec "$@"
 }
 
 ESHELL="${ESH_SH_CUR_SHORT}_login_shell"
@@ -123,7 +120,7 @@ export ESHELL
 
 etodo()
 {
-    ee "$HOME/org/todo.org"
+    e "$HOME/org/todo.org"
 }
 
 ### vim
