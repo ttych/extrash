@@ -103,7 +103,7 @@ eck()
 }
 ecs()
 {
-    ec_c -e '(client-save-kill-emacs)'
+    ec_c --tty -e '(client-save-kill-emacs)'
 }
 ecd()
 {
