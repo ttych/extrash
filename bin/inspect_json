@@ -1,4 +1,4 @@
 #!/bin/sh
 # -*- mode: sh -*-
 
-ruby -r json -r pp  -e "puts JSON.pretty_generate(JSON.parse(File.read('$1')))"
+ruby -r json -e "puts JSON.pretty_generate(JSON.parse(File.read('$1')))"
