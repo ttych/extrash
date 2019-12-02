@@ -1,0 +1,4 @@
+#!/bin/sh
+# -*- mode: sh -*-
+
+ruby -r pp -e "pp File.read('$1')"
