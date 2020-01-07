@@ -79,16 +79,17 @@ rgr_on()
     rgr_cksum "$rgr_on__file"
     rgr_on__cksum="$rgr_cksum"
 
+    rgr_on__status=1
     if "$rgr_on__kind"_rgr "$rgr_on__file" "devel_subtitle"; then
         rgr_cksum "$rgr_on__file"
         if [ "$rgr_cksum" = "$rgr_on__cksum" ]; then
-            rgr_stage "$rgr_on__file"
+            rgr_stage "$rgr_on__file" &&
+                rgr_on__status=0
         else
             devel_subtitle "skip staging for $1 (file changed)"
         fi
     fi
 
-    rgr_on__status="$?"
     if [ $rgr_on__status -eq 0 ]; then
         rgr_on__status_msg=OK
     else
