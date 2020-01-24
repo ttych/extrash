@@ -48,23 +48,26 @@ devel_kind_for()
 
 RGR_DELAY=2
 RGR_AUTO=FALSE
-RGR_DEFAULT_PRUNE='-P .git -P .tox -P __pycache__'
+RGR_DEFAULT_PRUNE='-P .git -P .tox -P __pycache__ -P .idea'
 
 rgr()
 {
+    rgr__usage="rgr [-p path] [-P] [-a]"
+    rgr__base_prune="$RGR_DEFAULT_PRUNE"
     rgr__prune=
     rgr__auto=
     OPTIND=1
-    while getopts :P:a opt; do
+    while getopts :hPp:a opt; do
         case $opt in
-            P) rgr__prune="$rgr__prune -P $OPTARG" ;;
+            h) printf "%s\n" "$rgr__usage"; return 0 ;;
+            p) rgr__prune="$rgr__prune -P $OPTARG" ;;
+            P) rgr__base_prune= ;;
             a) rgr__auto='-a' ;;
         esac
     done
     shift $(($OPTIND - 1))
-    rgr__prune="${rgr__prune:-$RGR_DEFAULT_PRUNE}"
 
-    file_mon -s "$RGR_DELAY" -c "rgr_on $rgr__auto \"%s\"" $rgr__prune "$@"
+    file_mon -s "$RGR_DELAY" -c "rgr_on $rgr__auto \"%s\"" $rgr__base_prune $rgr__prune "$@"
 }
 
 rgr_timestamp()
