@@ -53,7 +53,7 @@ ruby_rubocop()
         echo >&2 "missing rubocop command"
         return 0
     }
-    ruby_exec rubocop -f fu "$1"
+    ruby_exec rubocop "$@"
 }
 
 ruby_reek()
@@ -62,7 +62,7 @@ ruby_reek()
         echo >&2 "missing reek command"
         return 0
     }
-    ruby_exec reek "$1"
+    ruby_exec reek "$@"
 }
 
 ruby_flay()
@@ -102,7 +102,7 @@ ruby_flog_all_rb()
         return 0
     }
     ruby_flog_all_rb=.
-    [ -d "lib" ] && ruby_flog_all_rb=lib
+     [ -d "lib" ] && ruby_flog_all_rb=lib
 
     find "$ruby_flog_all_rb" -name \*.rb | xargs flog
 }
@@ -163,7 +163,11 @@ ruby_rgr()
 ruby_rgr_rubocop()
 {
     "${2:-:}"  "rubocop $1"
-    ruby_rubocop "$1"
+    ruby_rgr_rubocop__flag=
+    if $RGR_AUTO; then
+        ruby_rgr_rubocop__flag='-a'
+    fi
+    ruby_rubocop -f fu $ruby_rgr_rubocop__flag "$1"
 }
 
 ruby_rgr_reek()

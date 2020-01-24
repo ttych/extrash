@@ -39,6 +39,7 @@ devel_kind_for()
     return 1
 }
 
+
 ### rgr - Red Green Refactor
 
 ## each lang should implement
@@ -46,10 +47,24 @@ devel_kind_for()
 ## - <lang>_rgr file title_function
 
 RGR_DELAY=2
+RGR_AUTO=FALSE
+RGR_DEFAULT_PRUNE='-P .git -P .tox -P __pycache__'
 
 rgr()
 {
-    file_mon -s "$RGR_DELAY" -c 'rgr_on "%s"' -P .git "$@"
+    rgr__prune=
+    rgr__auto=
+    OPTIND=1
+    while getopts :P:a opt; do
+        case $opt in
+            P) rgr__prune="$rgr__prune -P $OPTARG" ;;
+            a) rgr__auto='-a' ;;
+        esac
+    done
+    shift $(($OPTIND - 1))
+    rgr__prune="${rgr__prune:-$RGR_DEFAULT_PRUNE}"
+
+    file_mon -s "$RGR_DELAY" -c "rgr_on $rgr__auto \"%s\"" $rgr__prune "$@"
 }
 
 rgr_timestamp()
@@ -66,6 +81,14 @@ rgr_cksum()
 
 rgr_on()
 {
+    OPTIND=1
+    while getopts :a opt; do
+        case $opt in
+            a) RGR_AUTO=TRUE ;;
+        esac
+    done
+    shift $(($OPTIND - 1))
+
     [ -r "$1" ] || return 1
 
     rgr_on__status=0

@@ -70,7 +70,11 @@ python_black()
 
 python_pytest()
 {
-    return 1
+    which pytest 2>/dev/null >/dev/null || {
+        echo >&2 "missing pytest command"
+        return 1
+    }
+    pytest "$@"
 }
 
 
@@ -79,6 +83,7 @@ python_pytest()
 DEVEL_LANG="${DEVEL_LANG:+$DEVEL_LANG }python requirements"
 
 PYTHON_LINTER="${PYTHON_LINTER:-flake8}"
+PYTHON_AUTOLINTER="${PYTHON_AUTOLINTER:-black}"
 
 is_python_file()
 {
@@ -119,14 +124,17 @@ python_rgr()
         python_rgr_lint "$@"
 }
 
-python_rgr_test()
-{
-    echo FIXME: skipped ...
-}
-
 python_rgr_lint()
 {
     python_rgr_"$PYTHON_LINTER" "$@"
+    python_rgr_lint__status=$?
+
+    if [ $python_rgr_lint__status -ne 0 ] && $RGR_AUTO; then
+        python_rgr_"$PYTHON_AUTOLINTER" "$@"
+        python_rgr_"$PYTHON_LINTER" "$@"
+        python_rgr_lint__status=$?
+    fi
+    return $python_rgr_lint__status
 }
 
 python_rgr_pylint()
@@ -141,29 +149,34 @@ python_rgr_flake8()
     python_flake8 "$1"
 }
 
+python_rgr_black()
+{
+    "${2:-:}"  "black $1"
+    python_black "$1"
+}
 
-# ruby_rgr_test()
-# {
-#     if ! ruby_test_identify "$1"; then
-#         "${2:-:}" "no test found for $1"
-#         return 1
-#     fi
+python_rgr_test()
+{
+    if ! python_test_identify "$1"; then
+        "${2:-:}" "no test found for $1"
+        return 1
+    fi
 
-#     ruby_rgr_test_one "$ruby_test_identify__type" "$ruby_test_identify__file" "$2" &&
-#         ruby_rgr_test_all "$ruby_test_identify__type" "$2"
-# }
+    python_rgr_test_one "$python_test_identify__dir" "$python_test_identify__file" "$2" &&
+        python_rgr_test_all "$python_test_identify__type" "$2"
+}
 
-# ruby_rgr_test_one()
-# {
-#     "${3:-:}" "test $2 ($1)"
-#     ruby_"$1" "$2"
-# }
+python_rgr_test_one()
+{
+    "${3:-:}" "test $2 ($1)"
+    python_"$1" "$2"
+}
 
-# ruby_rgr_test_all()
-# {
-#     "${2:-:}" "test all ($1)"
-#     ruby_"${1}"_all
-# }
+python_rgr_test_all()
+{
+    "${2:-:}" "test all ($1)"
+    python_"${1}"
+}
 
 
 # ########## test
