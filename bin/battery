@@ -46,9 +46,9 @@ battery_info()
             battery_state_l=+ ;;
     esac
     case "$battery_percentage_s" in
-        0*|1?|2?|3[0-5])
+        0*|1?|2*)
             battery_color=$ALERT_C ;;
-        3*|4*|5*|6[0-5])
+        3*|4*|5*)
             battery_color=$WARN_C ;;
     esac
 }
