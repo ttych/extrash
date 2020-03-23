@@ -24,7 +24,7 @@ load_avg_info()
     load_average
 
     if which ruby >/dev/null 2>/dev/null; then
-        load_average_percentage=$(ruby -e "puts ($load_average*100.0/$cpus).round")
+        load_average_percentage=$(ruby --disable-all -e "puts ($load_average*100.0/$cpus).round")
     elif which python >/dev/null 2>/dev/null; then
         load_average_percentage=$(python -c "print(round($load_average*100.0/$cpus))")
     fi
