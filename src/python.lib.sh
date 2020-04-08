@@ -77,6 +77,16 @@ python_pytest()
     pytest "$@"
 }
 
+python_virtualenv_check()
+{
+    if [ -z "$VIRTUAL_ENV" ]; then
+        echo >&2 "not in a virtual env"
+        if "$RGR_CHECK"; then
+            return 1
+        fi
+    fi
+}
+
 
 ########## rgr
 
@@ -109,6 +119,7 @@ is_requirements_file()
 
 requirements_rgr()
 {
+    python_virtualenv_check
     pip_rgr_install "$@"
 }
 
