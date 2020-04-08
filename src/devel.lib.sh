@@ -48,26 +48,29 @@ devel_kind_for()
 
 RGR_DELAY=2
 RGR_AUTO=FALSE
+RGR_CHECK=TRUE
 RGR_DEFAULT_PRUNE='-P .git -P .tox -P __pycache__ -P .idea'
 
 rgr()
 {
-    rgr__usage="rgr [-p path] [-P] [-a]"
+    rgr__usage="rgr [-p path_to_prune] [-P: no_default_prune] [-A: no_auto] [-C: no_check]"
     rgr__base_prune="$RGR_DEFAULT_PRUNE"
     rgr__prune=
-    rgr__auto=
+    rgr__auto='-a'
+    rgr__check='-c'
     OPTIND=1
-    while getopts :hPp:a opt; do
+    while getopts :hPp:AC opt; do
         case $opt in
             h) printf "%s\n" "$rgr__usage"; return 0 ;;
             p) rgr__prune="$rgr__prune -P $OPTARG" ;;
             P) rgr__base_prune= ;;
-            a) rgr__auto='-a' ;;
+            A) rgr__auto='-A' ;;
+            C) rgr__check='-C' ;;
         esac
     done
     shift $(($OPTIND - 1))
 
-    file_mon -s "$RGR_DELAY" -c "rgr_on $rgr__auto \"%s\"" $rgr__base_prune $rgr__prune "$@"
+    file_mon -s "$RGR_DELAY" -c "rgr_on $rgr__auto $rgr__check \"%s\"" $rgr__base_prune $rgr__prune "$@"
 }
 
 rgr_timestamp()
@@ -85,9 +88,12 @@ rgr_cksum()
 rgr_on()
 {
     OPTIND=1
-    while getopts :a opt; do
+    while getopts :aAcC opt; do
         case $opt in
             a) RGR_AUTO=TRUE ;;
+            A) RGR_AUTO=FALSE ;;
+            c) RGR_CHECK=TRUE ;;
+            C) RGR_CHECK=FALSE ;;
         esac
     done
     shift $(($OPTIND - 1))
