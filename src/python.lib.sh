@@ -79,7 +79,9 @@ python_pytest()
 
 python_package()
 {
-    python_exec setup.py check -ms
+    if [ -n "$1" ]; then
+        python_exec "$1" check -ms
+    fi
 }
 
 python_virtualenv_check()
