@@ -173,18 +173,20 @@ python_rgr_test()
         return 1
     fi
 
-    python_rgr_test_one "$python_test_identify__dir" "$python_test_identify__file" "$2" &&
+    python_rgr_test_one "$python_test_identify__type" "$python_test_identify__file" "$2" &&
         python_rgr_test_all "$python_test_identify__type" "$2"
 }
 
 python_rgr_test_one()
 {
+    echo HERE1
     "${3:-:}" "test $2 ($1)"
     python_"$1" "$2"
 }
 
 python_rgr_test_all()
 {
+    echo HERE2
     "${2:-:}" "test all ($1)"
     python_"${1}"
 }
@@ -192,117 +194,56 @@ python_rgr_test_all()
 
 # ########## test
 
-# RUBY_TEST_AUTOCREATE=FALSE
-# _RUBY_TEST_FRAMEWORKS='minitest rspec'
+PTYHON_TEST_DIRS="test tests"
 
-# ruby_test_identify()
-# {
-#     ruby_test_identify__type=
-#     ruby_test_identify__file=
+python_test_identify()
+{
+    python_test_identify__type=pytest
+    python_test_identify__file=
 
-#     is_ruby_file "$1" || return 1
+    is_python_file "$1" || return 1
 
-#     case "$1" in
-#         *_spec.rb)
-#             ruby_test_identify__file="$1"
-#             ruby_test_identify__type=rspec
-#             ;;
-#         *_test.rb)
-#             ruby_test_identify__file="$1"
-#             ruby_test_identify__type=minitest
-#             ;;
-#         spec/*.rb)
-#             ruby_test_identify__file="${1%\.rb}_spec.rb"
-#             ruby_test_identify__type=rspec
-#             ;;
-#         test/*.rb)
-#             ruby_test_identify__file="${1%\.rb}_test.rb"
-#             ruby_test_identify__type=minitest
-#             ;;
-#         # FIXME: more case ???
-#         app/*.rb|lib/*.rb)
-#             ruby_test_guess || return 1
-#             ruby_test_identify__file="${1%.rb}_${ruby_test_guess__dir}.rb"
-#             ruby_test_identify__file="${ruby_test_identify__file#*/}"
-#             ruby_test_identify__file="$ruby_test_guess__dir/$ruby_test_identify__file"
-#             ruby_test_identify__type="$ruby_test_guess__type"
-#             ;;
-#         *.rb)
-#             ruby_test_guess || return 1
-#             ruby_test_identify__file="${1%.rb}_${ruby_test_guess__dir}.rb"
-#             ruby_test_identify__type="$ruby_test_guess__type"
-#             ;;
-#     esac
+    case "$1" in
+        test_*.py|*/test_*.py)
+            python_test_identify__file="$1"
+            ;;
+        test/__init__.py|tests/__init__.py|test/*/__init__.py|tests/*/__init__.py)
+            python_test_identify__file="${1%/__init__.py}/"
+            ;;
+        */conftest.py)
+            python_test_identify__file="${1%/conftest.py}"
+            ;;
+        */__init__.py)
+            python_test_guess || return 1
+            python_test_identify__file="${1%/__init__.py}/"
+            if [ -n "$python_test_guess__dir" ]; then
+                python_test_identify__file="${python_test_guess__dir}/${python_test_identify__file#*/}"
+            fi
+            ;;
+        *.py|*/*.py)
+            python_test_guess || return 1
+            python_test_identify__file="${1%/*}/test_${1##*/}"
+            if [ -n "$python_test_guess__dir" ]; then
+                python_test_identify__file="${python_test_guess__dir}/${python_test_identify__file#*/}"
+            fi
+            ;;
+    esac
 
-#     if $RUBY_TEST_AUTOCREATE; then
-#         if [ -n "$ruby_test_identify__file" ] && [ "$ruby_test_identify__file" != "$1" ]; then
-#             [ -r "$ruby_test_identify__file" ] ||
-#                 touch "$ruby_test_identify__file"
-#         fi
-#     fi
-# }
+    if $RGR_TEST_AUTOCREATE; then
+        if [ -n "$python_test_identify__file" ] && [ "$python_test_identify__file" != "$1" ]; then
+            [ -r "$python_test_identify__file" ] ||
+                touch "$python_test_identify__file"
+        fi
+    fi
+}
 
-# ruby_test_guess()
-# {
-#     if ruby_has_minitest; then
-#         ruby_test_guess__type=minitest
-#         ruby_test_guess__dir="$_RUBY_MINITEST_DIR"
-#     elif ruby_has_rspec; then
-#         ruby_test_guess__type=rspec
-#         ruby_test_guess__dir="$_RUBY_RSPEC_DIR"
-#     else
-#         ruby_test_guess__type=ruby
-#         ruby_test_guess__dir="$_RUBY_MINITEST_DIR"
-#     fi
-# }
-
-
-# ########## minitest
-
-# _RUBY_MINITEST_DIR=test
-# _RUBY_MINITEST_DIRS="test tests"
-
-# ruby_has_minitest()
-# {
-#     for ruby_has_minitest in $_RUBY_MINITEST_DIRS; do
-#         [ -d "$ruby_has_minitest" ] && return 0
-#     done
-#     return 1
-# }
-
-# ruby_minitest()
-# {
-#     ruby_rake test TEST="$1" ||
-#         ruby_ruby "$1"
-# }
-
-# ruby_minitest_all()
-# {
-#     ruby_rake test ||
-#         return 0
-# }
-
-
-# ########## rspec
-
-# _RUBY_RSPEC_DIR=spec
-
-# ruby_has_rspec()
-# {
-#     [ -d "$_RUBY_RSPEC_DIR" ] && return 0
-#     return 1
-# }
-
-# ruby_rspec()
-# {
-#     which rspec 2>/dev/null >/dev/null || {
-#         echo >&2 "missing rspec command"
-#         return 0
-#     }
-#     ruby_exec rspec "$@"
-# }
-
-# ruby_rspec_all()
-# {
-#     ruby_rspec
-# }
+python_test_guess()
+{
+    python_test_guess__type=pytest
+    for python_test_guess__dir in $PTYHON_TEST_DIRS; do
+        if [ -d "$python_test_guess__dir" ]; then
+            return
+        fi
+    done
+    python_test_guess__dir=
+}
