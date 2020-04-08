@@ -119,8 +119,8 @@ is_requirements_file()
 
 requirements_rgr()
 {
-    python_virtualenv_check
-    pip_rgr_install "$@"
+    python_virtualenv_check &&
+        pip_rgr_install "$@"
 }
 
 pip_rgr_install()
