@@ -179,14 +179,12 @@ python_rgr_test()
 
 python_rgr_test_one()
 {
-    echo HERE1
     "${3:-:}" "test $2 ($1)"
     python_"$1" "$2"
 }
 
 python_rgr_test_all()
 {
-    echo HERE2
     "${2:-:}" "test all ($1)"
     python_"${1}"
 }
