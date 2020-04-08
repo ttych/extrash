@@ -77,6 +77,11 @@ python_pytest()
     pytest "$@"
 }
 
+python_package()
+{
+    python_exec setup.py check -ms
+}
+
 python_virtualenv_check()
 {
     if [ -z "$VIRTUAL_ENV" ]; then
@@ -217,6 +222,10 @@ python_test_identify()
             if [ -n "$python_test_guess__dir" ]; then
                 python_test_identify__file="${python_test_guess__dir}/${python_test_identify__file#*/}"
             fi
+            ;;
+        setup.py)
+            python_test_identify__file="$1"
+            python_test_identify__type="package"
             ;;
         *.py|*/*.py)
             python_test_guess || return 1
