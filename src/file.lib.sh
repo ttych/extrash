@@ -79,3 +79,12 @@ file_mon()
         sleep $file_mon__sleep
     done
 )
+
+
+##########################################
+# file inspect
+##########################################
+file_inspect()
+{
+    ruby -e "puts File.read('$1').inspect"
+}

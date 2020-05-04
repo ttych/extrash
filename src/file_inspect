@@ -1,0 +1,7 @@
+#!/bin/sh
+# -*- mode: sh -*-
+
+#%%load%% file.lib.sh
+
+
+file_inspect "$@"
