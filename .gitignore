@@ -4,3 +4,5 @@
 /bin/python.lib.sh
 /bin/file.lib.sh
 /bin/file_inspect
+/bin/cert.lib.sh
+/bin/cert_*
