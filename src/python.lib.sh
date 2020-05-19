@@ -197,7 +197,7 @@ python_rgr_test_all()
 }
 
 
-# ########## test
+########## test
 
 PTYHON_TEST_DIRS="test tests"
 
@@ -255,4 +255,17 @@ python_test_guess()
         fi
     done
     python_test_guess__dir=
+}
+
+
+########## clean
+
+python_clean_cache()
+{
+	find . | grep -E '(__pycache__|\.pyc$|\.pyo$)' | xargs rm -rf
+}
+
+python_uninstall_all()
+{
+    pip freeze | xargs pip uninstall -y
 }
