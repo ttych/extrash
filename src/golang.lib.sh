@@ -7,3 +7,4 @@ for home in "$HOME" "$HOME_ALT"; do
     fi
 done
 export GOPATH
+export GOPATH_1="${GOPATH%%:*}"
