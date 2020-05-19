@@ -6,4 +6,5 @@
 /bin/file_inspect
 /bin/cert.lib.sh
 /bin/cert_*
-bin/golang.lib.sh
+/bin/golang.lib.sh
+/bin/http.lib.sh

@@ -129,6 +129,35 @@ whttpd()
 }
 
 
+### url
+
+url_encode_p()
+{
+    python -c 'import sys; from urllib import parse; print(parse.quote(sys.argv[1], safe=""))' "$@"
+}
+
+url_encode_r()
+{
+    ruby -e "require 'erb'; ARGV.each {|l| puts ERB::Util.url_encode(l) }" -- "$@"
+}
+
+url_encode()
+{
+    if which ruby >/dev/null 2>/dev/null; then
+        url_encode_r "$@"
+        return $?
+    fi
+
+    if which python >/dev/null 2>/dev/null; then
+        url_encode_p "$@"
+        return $?
+    fi
+
+    return 1
+}
+
+
+
 ### main
 
 case "$SCRIPT_NAME" in
