@@ -199,7 +199,7 @@ python_rgr_test_all()
 
 ########## test
 
-PTYHON_TEST_DIRS="test tests/unit_tests tests"
+PTYHON_TEST_DIRS="test/unit test tests/unit tests/unit_tests tests"
 
 python_test_identify()
 {
