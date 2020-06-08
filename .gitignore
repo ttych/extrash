@@ -8,3 +8,5 @@
 /bin/cert_*
 /bin/golang.lib.sh
 /bin/http.lib.sh
+/bin/ssh.lib.sh
+/bin/ssh_*
