@@ -29,24 +29,24 @@ _emacs_reset()
 }
 
 #e() { emacs -fn -\*-fixed-\*-12-\* "$@" & }
-ex()
+emx()
 {
     _emacs "$@" &
 }
 
-exq()
+emqx()
 {
-    ex -quick "$@"
+    emx -quick "$@"
 }
 
-et()
+emt()
 {
     _emacs -nw "$@"
 }
 
-etq()
+emqt()
 {
-    et -quick "$@"
+    emt -quick "$@"
 }
 
 _emacsclient_guess()
