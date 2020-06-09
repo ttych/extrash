@@ -10,3 +10,5 @@
 /bin/http.lib.sh
 /bin/ssh.lib.sh
 /bin/ssh_*
+/bin/ruby_extrash.lib.sh
+/bin/uuid_gen
