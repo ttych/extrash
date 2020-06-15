@@ -65,6 +65,22 @@ cert_verify()
     openssl verify ${2:+-untrusted "$2"} "$@"
 }
 
+cert_self_signed()
+{
+    cert_self_signed="${1:-cert}"
+
+    if [ -r "$cert_self_signed.pem" ]; then
+	echo >&2 "$cert_self_signed.pem already exists"
+	return 1
+    fi
+
+    openssl req -x509 -nodes -newkey rsa:4096 -keyout "$cert_self_signed.key" -out "$cert_self_signed.pem" -days "${2:-3650}"
+}
+
+
+
+### Main
+
 case ${0##*/} in
     cert_*)
         ${0##*/} "$@"
