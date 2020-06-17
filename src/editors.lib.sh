@@ -7,6 +7,15 @@ SCRIPT_PATH=`cd "${SCRIPT_RPATH:-.}" && pwd`
 
 
 ### emacs
+if [ -n "$ESH_SH_CUR_SHORT" ]; then
+    ESHELL="${ESH_SH_CUR_SHORT}_login_shell"
+    export ESHELL
+fi
+
+if [ -d "$HOME_ALT" ] && [ -d "$HOME_ALT/.emacs.d" ]; then
+    EMACS_WORKING_DIR="$HOME_ALT/.emacs.d"
+    export EMACS_WORKING_DIR
+fi
 
 _emacs_guess()
 {
@@ -115,13 +124,12 @@ e()
     ec "$@"
 }
 
-ESHELL="${ESH_SH_CUR_SHORT}_login_shell"
-export ESHELL
 
 etodo()
 {
     e "$HOME/org/todo.org"
 }
+
 
 ### vim
 
