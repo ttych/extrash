@@ -58,6 +58,16 @@ emqt()
     emt -quick "$@"
 }
 
+emc()
+{
+    emt "$@"
+}
+
+emqc()
+{
+    emqt "$@"
+}
+
 _emacsclient_guess()
 {
     if [ -z "$_EMACSCLIENT" ] || [ "$_EMACSCLIENT" = ":" ]; then
