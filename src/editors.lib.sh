@@ -24,17 +24,25 @@ _emacs_guess()
         [ -z "$_EMACS" ] && _EMACS=`command -v xemacs`
         _EMACS=${_EMACS:-:}
     fi
+    if [ -z "$_EMACS_TERM" ]; then
+        case "$TERM" in
+            xterm-*) _EMACS_TERM="$TERM" ;;
+            *-256color) _EMACS_TERM="xterm-256color" ;;
+            *) _EMACS_TERM="$TERM" ;;
+        esac
+    fi
 }
 _emacs_guess
 _emacs()
 {
-    $_EMACS "$@"
+    TERM="$_EMACS_TERM" $_EMACS "$@"
 }
 
 _emacs_reset()
 {
     _EMACS=
     _EMACSCLIENT=
+    _EMACS_TERM=
 }
 
 #e() { emacs -fn -\*-fixed-\*-12-\* "$@" & }
@@ -75,12 +83,19 @@ _emacsclient_guess()
         [ -z "$_EMACSCLIENT" ] && _EMACSCLIENT=`command -v xemacsclient`
          _EMACSCLIENT=${_EMACSCLIENT:-:}
     fi
+    if [ -z "$_EMACS_TERM" ]; then
+        case "$TERM" in
+            xterm-*) _EMACS_TERM="$TERM" ;;
+            *-256color) _EMACS_TERM="xterm-256color" ;;
+            *) _EMACS_TERM="$TERM" ;;
+        esac
+    fi
 }
 _emacsclient_guess
 
 _emacsclient()
 {
-    $_EMACSCLIENT "$@"
+    TERM="$_EMACS_TERM" $_EMACSCLIENT "$@"
 }
 
 # em()
