@@ -262,7 +262,7 @@ python_test_guess()
 
 python_clean_cache()
 {
-	find . | grep -E '(__pycache__|\.pyc$|\.pyo$)' | xargs rm -rf
+    find . | grep -E '(__pycache__|\.pyc$|\.pyo$)' | xargs rm -rf
 }
 
 python_uninstall_all()
