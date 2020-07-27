@@ -201,6 +201,8 @@ ruby_rgr_test()
 
 ruby_rgr_test_one()
 {
+    [ "$2" = "NO_ONE" ] && return 0
+
     "${3:-:}" "test $2 ($1)"
     ruby_"$1" "$2"
 }
@@ -225,6 +227,10 @@ ruby_test_identify()
     is_ruby_file "$1" || return 1
 
     case "$1" in
+        spec/spec_helper.rb|spec/rails_helper.rb)
+            ruby_test_identify__file="NO_ONE"
+            ruby_test_identify__type=rspec
+            ;;
         *_spec.rb)
             ruby_test_identify__file="$1"
             ruby_test_identify__type=rspec
