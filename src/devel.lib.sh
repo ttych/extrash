@@ -50,7 +50,7 @@ RGR_DELAY=2
 RGR_AUTO=FALSE
 RGR_CHECK=TRUE
 RGR_TEST_AUTOCREATE=FALSE
-RGR_DEFAULT_PRUNE='-P .git -P .tox -P __pycache__ -P .idea'
+RGR_DEFAULT_PRUNE='-P .git -P .tox -P __pycache__ -P .idea -P node_modules'
 
 rgr()
 {
