@@ -18,6 +18,9 @@ FALSE()
 
 ########## ruby
 
+RUBY_RGR_RUBOCOP_AUTO='-a'
+
+
 ruby_bundle()
 {
     which bundle 2>/dev/null >/dev/null || {
@@ -165,7 +168,7 @@ ruby_rgr_rubocop()
     "${2:-:}"  "rubocop $1"
     ruby_rgr_rubocop__flag=
     if $RGR_AUTO; then
-        ruby_rgr_rubocop__flag='-a'
+        ruby_rgr_rubocop__flag="$RUBY_RGR_RUBOCOP_AUTO"
     fi
     ruby_rubocop -f fu $ruby_rgr_rubocop__flag "$1"
 }
@@ -195,8 +198,27 @@ ruby_rgr_test()
         return 1
     fi
 
-    ruby_rgr_test_one "$ruby_test_identify__type" "$ruby_test_identify__file" "$2" &&
-        ruby_rgr_test_all "$ruby_test_identify__type" "$2"
+    ruby_rgr_test__frameworks=
+    for ruby_rgr_test__t in $ruby_test_identify; do
+        ruby_rgr_test__framework="${ruby_rgr_test__t%%:*}"
+        ruby_rgr_test__test_file="${ruby_rgr_test__t#$ruby_rgr_test__framework}"
+        ruby_rgr_test__test_file="${ruby_rgr_test__test_file#:}"
+
+        case $ruby_rgr_test__frameworks in
+            *"$ruby_rgr_test__framework"*) ;;
+            *)
+                ruby_rgr_test__frameworks="${ruby_rgr_test__frameworks:+$ruby_rgr_test__frameworks }$ruby_rgr_test__framework"
+                ;;
+        esac
+
+        if [ -n "$ruby_rgr_test__test_file" ]; then
+            ruby_rgr_test_one "$ruby_rgr_test__framework" "$ruby_rgr_test__test_file" "$2" || return 1
+        fi
+    done
+
+    for ruby_rgr_test__framework in $ruby_rgr_test__frameworks; do
+        ruby_rgr_test_all "$ruby_rgr_test__framework" "$2" || return 1
+    done
 }
 
 ruby_rgr_test_one()
@@ -221,66 +243,80 @@ _RUBY_TEST_FRAMEWORKS='minitest rspec'
 
 ruby_test_identify()
 {
-    ruby_test_identify__type=
-    ruby_test_identify__file=
+    ruby_test_identify=
 
     is_ruby_file "$1" || return 1
 
+    ruby_test_frameworks
+    ruby_test_identify__frameworks="$ruby_test_frameworks"
+
     case "$1" in
         spec/spec_helper.rb|spec/rails_helper.rb)
-            ruby_test_identify__file="NO_ONE"
-            ruby_test_identify__type=rspec
+            ruby_test_identify__frameworks=rspec
+            ;;
+        test/test_helper.rb|tests/test_helper.rb)
+            ruby_test_identify__frameworks=minitest
+            ;;
+        config/*)
+            ;;
+        db/*)
             ;;
         *_spec.rb)
-            ruby_test_identify__file="$1"
-            ruby_test_identify__type=rspec
-            ;;
-        *_test.rb)
-            ruby_test_identify__file="$1"
-            ruby_test_identify__type=minitest
+            ruby_test_identify="rspec:$1"
+            ruby_test_identify__frameworks=rspec
             ;;
         spec/*.rb)
-            ruby_test_identify__file="${1%\.rb}_spec.rb"
-            ruby_test_identify__type=rspec
+            ruby_test_identify="rspec:${1%\.rb}_spec.rb"
+            ruby_test_identify__frameworks=rspec
             ;;
-        test/*.rb)
-            ruby_test_identify__file="${1%\.rb}_test.rb"
-            ruby_test_identify__type=minitest
+        *_test.rb)
+            ruby_test_identify="minitest:$1"
+            ruby_test_identify__frameworks=minitest
             ;;
-        # FIXME: more case ???
-        app/*.rb|lib/*.rb)
-            ruby_test_guess || return 1
-            ruby_test_identify__file="${1%.rb}_${ruby_test_guess__dir}.rb"
-            ruby_test_identify__file="${ruby_test_identify__file#*/}"
-            ruby_test_identify__file="$ruby_test_guess__dir/$ruby_test_identify__file"
-            ruby_test_identify__type="$ruby_test_guess__type"
+        test/*.rb|tests/*.rb)
+            ruby_test_identify="minitest:${1%\.rb}_test.rb"
+            ruby_test_identify__frameworks=minitest
             ;;
         *.rb)
-            ruby_test_guess || return 1
-            ruby_test_identify__file="${1%.rb}_${ruby_test_guess__dir}.rb"
-            ruby_test_identify__type="$ruby_test_guess__type"
+            ruby_test_identify__should=
+            for ruby_test_identify__framework in $ruby_test_frameworks; do
+                ruby_${ruby_test_identify__framework}_identify_test "$1"
+                ruby_test_identify__status=$?
+                eval ruby_test_identify__found="\"$ruby_test_identify__framework:\$ruby_${ruby_test_identify__framework}_identify_test\""
+
+                if [ $ruby_test_identify__status -eq 0 ]; then
+                    ruby_test_identify="${ruby_test_identify:+$ruby_test_identify }$ruby_test_identify__found"
+                else
+                    [ -z "$ruby_test_identify__bkp" ] && ruby_test_identify__bkp="$ruby_test_identify__found"
+                fi
+            done
+
+            [ -z "$ruby_test_identify" ] && ruby_test_identify="$ruby_test_identify__bkp"
             ;;
     esac
 
-    if $RUBY_TEST_AUTOCREATE; then
-        if [ -n "$ruby_test_identify__file" ] && [ "$ruby_test_identify__file" != "$1" ]; then
-            [ -r "$ruby_test_identify__file" ] ||
-                touch "$ruby_test_identify__file"
-        fi
-    fi
+    # if $RUBY_TEST_AUTOCREATE; then
+    #     if [ -n "$ruby_test_identify__file" ] && [ "$ruby_test_identify__file" != "$1" ]; then
+    #         [ -r "$ruby_test_identify__file" ] ||
+    #             touch "$ruby_test_identify__file"
+    #     fi
+    # fi
+
+    ruby_test_identify="${ruby_test_identify:+$ruby_test_identify }$ruby_test_identify__frameworks"
 }
 
-ruby_test_guess()
+ruby_test_frameworks()
 {
+    ruby_test_frameworks=
+
     if ruby_has_minitest; then
-        ruby_test_guess__type=minitest
-        ruby_test_guess__dir="$_RUBY_MINITEST_DIR"
-    elif ruby_has_rspec; then
-        ruby_test_guess__type=rspec
-        ruby_test_guess__dir="$_RUBY_RSPEC_DIR"
-    else
-        ruby_test_guess__type=ruby
-        ruby_test_guess__dir="$_RUBY_MINITEST_DIR"
+        ruby_test_frameworks="${ruby_test_frameworks:+$ruby_test_frameworks }minitest"
+    fi
+    if ruby_has_rspec; then
+        ruby_test_frameworks="${ruby_test_frameworks:+$ruby_test_frameworks }rspec"
+    fi
+    if [ -z "$ruby_test_frameworks" ]; then
+        ruby_test_frameworks=ruby
     fi
 }
 
@@ -295,6 +331,38 @@ ruby_has_minitest()
     for ruby_has_minitest in $_RUBY_MINITEST_DIRS; do
         [ -d "$ruby_has_minitest" ] && return 0
     done
+    return 1
+}
+
+ruby_minitest_identify_test()
+{
+    ruby_minitest_identify_test=
+
+    ruby_minitest_identify_test__file="$1"
+    ruby_minitest_identify_test__test_file="${ruby_minitest_identify_test__file%\.rb}_test.rb"
+
+    ruby_minitest_identify_test__test_file_pre="${ruby_minitest_identify_test__test_file%%/*}"
+    ruby_minitest_identify_test__test_file_sub="${ruby_minitest_identify_test__test_file#$ruby_minitest_identify_test__test_file_pre/}"
+
+    # check minitest dir
+    for ruby_minitest_identify_test_d in $_RUBY_MINITEST_DIRS; do
+        [ -d "$ruby_minitest_identify_test_d" ] || continue
+
+        ruby_minitest_identify_test="$ruby_minitest_identify_test_d/$ruby_minitest_identify_test__test_file"
+        [ -r "$ruby_minitest_identify_test" ] && return 0
+
+        ruby_minitest_identify_test="$ruby_minitest_identify_test_d/$ruby_minitest_identify_test__test_file_sub"
+        [ -r "$ruby_minitest_identify_test" ] && return 0
+    done
+
+    # along
+    ruby_minitest_identify_test="$ruby_minitest_identify_test__test_file"
+    [ -r "$ruby_minitest_identify_test" ] && return 0
+
+    # should
+    ruby_minitest_identify_test="$_RUBY_MINITEST_DIR/$ruby_minitest_identify_test__test_file_sub"
+    [ -r "$ruby_minitest_identify_test" ] && return 0
+
     return 1
 }
 
@@ -318,6 +386,36 @@ _RUBY_RSPEC_DIR=spec
 ruby_has_rspec()
 {
     [ -d "$_RUBY_RSPEC_DIR" ] && return 0
+    return 1
+}
+
+ruby_rspec_identify_test()
+{
+    ruby_rspec_identify_test=
+
+    ruby_rspec_identify_test__file="$1"
+    ruby_rspec_identify_test__test_file="${ruby_rspec_identify_test__file%\.rb}_test.rb"
+
+    ruby_rspec_identify_test__test_file_pre="${ruby_rspec_identify_test__test_file%%/*}"
+    ruby_rspec_identify_test__test_file_sub="${ruby_rspec_identify_test__test_file#$ruby_rspec_identify_test__test_file_pre/}"
+
+    # check rspec dir
+    if [ -d "$_RUBY_RSPEC_DIR" ]; then
+        ruby_rspec_identify_test="$_RUBY_RSPEC_DIR/$ruby_rspec_identify_test__test_file"
+        [ -r "$ruby_rspec_identify_test" ] && return 0
+
+        ruby_rspec_identify_test="$_RUBY_RSPEC_DIR/$ruby_rspec_identify_test__test_file_sub"
+        [ -r "$ruby_rspec_identify_test" ] && return 0
+    fi
+
+    # along
+    ruby_rspec_identify_test="$ruby_rspec_identify_test__test_file"
+    [ -r "$ruby_rspec_identify_test" ] && return 0
+
+    # should
+    ruby_rspec_identify_test="$_RUBY_RSPEC_DIR/$ruby_rspec_identify_test__test_file_sub"
+    [ -r "$ruby_rspec_identify_test" ] && return 0
+
     return 1
 }
 
