@@ -50,30 +50,34 @@ RGR_DELAY=2
 RGR_AUTO=FALSE
 RGR_CHECK=TRUE
 RGR_TEST_AUTOCREATE=FALSE
-RGR_DEFAULT_PRUNE='-P .git -P .tox -P __pycache__ -P .idea -P node_modules -P bootsnap-compile-cache'
+RGR_DEFAULT_PRUNE='-N .git -N .tox -N __pycache__ -N .idea -N node_modules -R .*/tmp/cache/.*'
 
 rgr()
 {
-    rgr__usage="rgr [-p path_to_prune] [-P: no_default_prune] [-A: no_auto] [-C: no_check] [-t: test_autocreate]"
-    rgr__base_prune="$RGR_DEFAULT_PRUNE"
+    rgr__usage="rgr [-N name_to_prune] [-P path_to_prune] [-R regex_to_prune] [-D: no_default] [-A: no_auto] [-C: no_check] [-t: test_autocreate]"
+    rgr__default_prune="$RGR_DEFAULT_PRUNE"
     rgr__prune=
     rgr__auto='-a'
     rgr__check='-c'
     rgr__test_autocreate='-T'
+    rgr__extra=
     OPTIND=1
-    while getopts :hPp:ACt opt; do
+    while getopts :hDN:P:R:ACtv opt; do
         case $opt in
             h) printf "%s\n" "$rgr__usage"; return 0 ;;
-            p) rgr__prune="$rgr__prune -P $OPTARG" ;;
-            P) rgr__base_prune= ;;
+            D) rgr__default_prune= ;;
+            N) rgr__prune="$rgr__prune -N $OPTARG" ;;
+            P) rgr__prune="$rgr__prune -P $OPTARG" ;;
+            R) rgr__prune="$rgr__prune -R $OPTARG" ;;
             A) rgr__auto='-A' ;;
             C) rgr__check='-C' ;;
             t) rgr__test_autocreate='-t' ;;
+            v) rgr__extra="${rgr__extra:+$rgr__extra } -v"
         esac
     done
     shift $(($OPTIND - 1))
 
-    file_mon -s "$RGR_DELAY" -c "rgr_on $rgr__auto $rgr__check $rgr__test_autocreate \"%s\"" $rgr__base_prune $rgr__prune "$@"
+    file_mon -s "$RGR_DELAY" -c "rgr_on $rgr__auto $rgr__check $rgr__test_autocreate \"%s\"" $rgr__default_prune $rgr__prune $rgr__extra "$@"
 }
 
 rgr_timestamp()
