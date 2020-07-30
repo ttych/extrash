@@ -50,7 +50,7 @@ RGR_DELAY=2
 RGR_AUTO=FALSE
 RGR_CHECK=TRUE
 RGR_TEST_AUTOCREATE=FALSE
-RGR_DEFAULT_PRUNE='-N .git -N .tox -N __pycache__ -N .idea -N node_modules -R .*/tmp/cache/.*'
+RGR_DEFAULT_PRUNE='-N .git -N .tox -N __pycache__ -N .pytest_cache -N .idea -N node_modules -R .*/tmp/cache/.*'
 
 rgr()
 {
