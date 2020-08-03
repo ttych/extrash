@@ -421,10 +421,16 @@ ruby_rspec_identify_test()
 
 ruby_rspec()
 {
+    if [ -x 'bin/rspec' ]; then
+        ./bin/rspec "$@"
+        return "$?"
+    fi
+
     which rspec 2>/dev/null >/dev/null || {
         echo >&2 "missing rspec command"
         return 0
     }
+
     ruby_exec rspec "$@"
 }
 
