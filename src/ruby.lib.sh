@@ -438,3 +438,52 @@ ruby_rspec_all()
 {
     ruby_rspec
 }
+
+
+########## rails
+
+rails_bootstrap()
+{
+    # 0. clean Gemfile
+    if [ -r "Gemfile" ]; then
+        if egrep "^gem ['\"](bootstrap|jquery-rails)['\"]" Gemfile >/dev/null; then
+            egrep -v "^gem ['\"](bootstrap|jquery-rails)['\"]" Gemfile > Gemfile.new &&
+                mv Gemfile.new Gemfile
+
+            bundle
+        fi
+    fi
+
+    # 1. yarn install
+    yarn add bootstrap jquery popper.js
+
+    # 2. config/webpack/environment.js
+    if ! grep jQuery config/webpack/environment.js >/dev/null; then
+        ruby -plne 'print "const webpack = require('webpack')
+environment.plugins.append(
+    'Provide',
+    new webpack.ProvidePlugin({
+        $: 'jquery',
+        jQuery: 'jquery',
+        Popper: ['popper.js', 'default']
+    })
+)
+" if /module.exports = environment/' config/webpack/environment.js > config/webpack/environment.js.new &&
+            mv config/webpack/environment.js.new config/webpack/environment.js
+    fi
+
+    # 3. app/javascript/packs/application.js
+    grep '^require ("bootstrap")' app/javascript/packs/application.js >/dev/null ||
+        echo 'require ("bootstrap")' >> app/javascript/packs/application.js
+
+    # 4. app/assets/stylesheets/application.css
+    if [ ! -r app/assets/stylesheets/application.scss ]; then
+        if [ -r app/assets/stylesheets/application.css ]; then
+            mv app/assets/stylesheets/application.css app/assets/stylesheets/application.scss
+        else
+            touch app/assets/stylesheets/application.scss
+        fi
+    fi
+    grep '^@import "bootstrap/scss/bootstrap";' app/assets/stylesheets/application.scss >/dev/null ||
+        echo '@import "bootstrap/scss/bootstrap";' >> app/assets/stylesheets/application.scss
+}
