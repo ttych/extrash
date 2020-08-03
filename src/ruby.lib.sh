@@ -394,7 +394,7 @@ ruby_rspec_identify_test()
     ruby_rspec_identify_test=
 
     ruby_rspec_identify_test__file="$1"
-    ruby_rspec_identify_test__test_file="${ruby_rspec_identify_test__file%\.rb}_test.rb"
+    ruby_rspec_identify_test__test_file="${ruby_rspec_identify_test__file%\.rb}_spec.rb"
 
     ruby_rspec_identify_test__test_file_pre="${ruby_rspec_identify_test__test_file%%/*}"
     ruby_rspec_identify_test__test_file_sub="${ruby_rspec_identify_test__test_file#$ruby_rspec_identify_test__test_file_pre/}"
