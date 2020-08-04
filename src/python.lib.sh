@@ -209,7 +209,7 @@ python_test_identify()
     is_python_file "$1" || return 1
 
     case "$1" in
-        test_*.py|*/test_*.py)
+        test_*.py|*/test_*.py|*_test.py|*/*_test.py)
             python_test_identify__file="$1"
             ;;
         test/__init__.py|tests/__init__.py|test/*/__init__.py|tests/*/__init__.py)
@@ -223,7 +223,7 @@ python_test_identify()
             python_test_identify__file="${1%/__init__.py}/"
             if [ -n "$python_test_guess__dir" ]; then
                 python_test_identify__file="${python_test_guess__dir}/${python_test_identify__file#*/}"
-            fi
+             fi
             ;;
         setup.py)
             python_test_identify__file="$1"
@@ -231,10 +231,13 @@ python_test_identify()
             ;;
         *.py|*/*.py)
             python_test_guess || return 1
-            python_test_identify__file="${1%/*}/test_${1##*/}"
-            if [ -n "$python_test_guess__dir" ]; then
-                python_test_identify__file="${python_test_guess__dir}/${python_test_identify__file#*/}"
-            fi
+            python_test_identify__filedir="${1%/*}"
+            python_test_identify__filename="${1##*/}"
+            for python_test_identify__file in "$python_test_identify__filedir/${python_test_identify__filename%.py}_test.py" "$python_test_identify__filedir/test_${python_test_identify__filename}"; do
+                [ -r "$python_test_identify__file" ] && break
+                [ -n "$python_test_guess__dir" ] && python_test_identify__file="${python_test_guess__dir}/${python_test_identify__file#*/}"
+                [ -r "$python_test_identify__file" ] && break
+            done
             ;;
     esac
 
