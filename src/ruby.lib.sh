@@ -459,16 +459,16 @@ rails_bootstrap()
 
     # 2. config/webpack/environment.js
     if ! grep jQuery config/webpack/environment.js >/dev/null; then
-        ruby -plne 'print "const webpack = require('webpack')
+        ruby -plne "print \"const webpack = require('webpack')
 environment.plugins.append(
     'Provide',
     new webpack.ProvidePlugin({
-        $: 'jquery',
+        \$: 'jquery',
         jQuery: 'jquery',
         Popper: ['popper.js', 'default']
     })
 )
-" if /module.exports = environment/' config/webpack/environment.js > config/webpack/environment.js.new &&
+\" if /module.exports = environment/" config/webpack/environment.js > config/webpack/environment.js.new &&
             mv config/webpack/environment.js.new config/webpack/environment.js
     fi
 
