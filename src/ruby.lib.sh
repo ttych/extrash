@@ -181,7 +181,7 @@ ruby_rgr_reek()
 
 ruby_rgr_flay()
 {
-    "${2:-:}" "flog *rb"
+    "${2:-:}" "flay *rb"
     ruby_flay_all_rb
 }
 
