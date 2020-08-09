@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo "clean $2"
+rm "$2"
