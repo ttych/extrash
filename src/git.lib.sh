@@ -190,3 +190,14 @@ _git_clone_or_update()
                      "${_git_clone_or_update__target}"
     fi
 )
+
+is_git_tracked()
+(
+    [ -f "$1" ] || return 1
+
+    is_git_tracked__file="${1##*/}"
+    is_git_tracked__dir="${1%$is_git_tracked__file}"
+    [ -n "$is_git_tracked__dir" ] && cd "$is_git_tracked__dir"
+
+    git ls-files --error-unmatch "$is_git_tracked__file" >/dev/null 2>/dev/null
+)

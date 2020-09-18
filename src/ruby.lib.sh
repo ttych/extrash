@@ -19,7 +19,7 @@ FALSE()
 ########## ruby
 
 RUBY_RGR_RUBOCOP_AUTO='-a'
-
+RUBY_RGR_ERBLINT_AUTO='-a'
 
 ruby_bundle()
 {
@@ -110,6 +110,15 @@ ruby_flog_all_rb()
     find "$ruby_flog_all_rb" -name \*.rb | xargs flog
 }
 
+ruby_erblint()
+{
+    which erblint 2>/dev/null >/dev/null || {
+        echo >&2 "missing erblint command"
+        return 0
+    }
+    ruby_exec erblint "$@"
+}
+
 ruby_bundle_install()
 {
     ruby_bundle install
@@ -118,7 +127,7 @@ ruby_bundle_install()
 
 ########## rgr
 
-DEVEL_LANG="${DEVEL_LANG:+$DEVEL_LANG }ruby gemfile"
+DEVEL_LANG="${DEVEL_LANG:+$DEVEL_LANG }ruby gemfile gemfile_lock embedded_ruby"
 
 is_ruby_file()
 {
@@ -137,7 +146,7 @@ is_gemfile_file()
 
     case "$1" in
         "Gemfile"|*.gemspec)
-            return 0
+            return 0 ;;
     esac
     return 1
 }
@@ -146,6 +155,45 @@ gemfile_rgr()
 {
     ruby_rgr_bundle_install "$@" &&
         ruby_rgr_rubocop "$@"
+}
+
+is_gemfile_lock_file()
+{
+    [ -d "$1" ] && return 1
+
+    is_git_tracked "$1" && return 0
+    return 1
+}
+
+gemfile_lock_rgr()
+{
+    return 0
+}
+
+is_embedded_ruby_file()
+{
+    [ -d "$1" ] && return 1
+
+    case "$1" in
+        *.erb)
+            return 0 ;;
+    esac
+    return 1
+}
+
+embedded_ruby_rgr()
+{
+    ruby_rgr_erblint "$@"
+}
+
+ruby_rgr_erblint()
+{
+    "${2:-:}" "erblint $1"
+    ruby_rgr_erblint__flag=
+    if $RGR_AUTO; then
+        ruby_rgr_erblint__flag="$RUBY_RGR_ERBLINT_AUTO"
+    fi
+    ruby_erblint $ruby_rgr_erblint__flag "$1"
 }
 
 ruby_rgr_bundle_install()
@@ -165,7 +213,7 @@ ruby_rgr()
 
 ruby_rgr_rubocop()
 {
-    "${2:-:}"  "rubocop $1"
+    "${2:-:}" "rubocop $1"
     ruby_rgr_rubocop__flag=
     if $RGR_AUTO; then
         ruby_rgr_rubocop__flag="$RUBY_RGR_RUBOCOP_AUTO"
@@ -175,7 +223,7 @@ ruby_rgr_rubocop()
 
 ruby_rgr_reek()
 {
-    "${2:-:}"  "reek $1"
+    "${2:-:}" "reek $1"
     ruby_reek "$1"
 }
 
@@ -193,33 +241,53 @@ ruby_rgr_flog()
 
 ruby_rgr_test()
 {
-    if ! ruby_test_identify "$1"; then
-        "${2:-:}" "no test found for $1"
-        return 1
-    fi
-
     ruby_rgr_test__frameworks=
-    for ruby_rgr_test__t in $ruby_test_identify; do
-        ruby_rgr_test__framework="${ruby_rgr_test__t%%:*}"
-        ruby_rgr_test__test_file="${ruby_rgr_test__t#$ruby_rgr_test__framework}"
-        ruby_rgr_test__test_file="${ruby_rgr_test__test_file#:}"
+
+    ruby_rgr_test__BIFS="$IFS"
+    IFS="
+"
+    for ruby_test_identify__t in $(ruby_test_identify "$1"); do
+        ruby_test_identify__t_framework="${ruby_test_identify__t%%:*}"
+        ruby_test_identify__t_file="${ruby_test_identify__t#$ruby_test_identify__t_framework}"
+        ruby_test_identify__t_file="${ruby_test_identify__t_file#:}"
 
         case $ruby_rgr_test__frameworks in
-            *"$ruby_rgr_test__framework"*) ;;
-            *)
-                ruby_rgr_test__frameworks="${ruby_rgr_test__frameworks:+$ruby_rgr_test__frameworks }$ruby_rgr_test__framework"
-                ;;
+            *"$ruby_rgr_test__frameworks"*) ;;
+            *) ruby_rgr_test__frameworks="${ruby_rgr_test__frameworks:+$ruby_rgr_test__frameworks }$ruby_rgr_test__framework"
         esac
-
-        if [ -n "$ruby_rgr_test__test_file" ]; then
-            ruby_rgr_test_one "$ruby_rgr_test__framework" "$ruby_rgr_test__test_file" "$2" || return 1
-        fi
     done
+    IFS=="$ruby_rgr_test__BIFS"
 
-    for ruby_rgr_test__framework in $ruby_rgr_test__frameworks; do
-        ruby_rgr_test_all "$ruby_rgr_test__framework" "$2" || return 1
-    done
+    # for
 }
+
+    # if ! ruby_test_identify "$1"; then
+    #     "${2:-:}" "no test found for $1"
+    #     return 1
+    # fi
+
+    # ruby_rgr_test__frameworks=
+    # for ruby_rgr_test__t in $ruby_test_identify; do
+    #     ruby_rgr_test__framework="${ruby_rgr_test__t%%:*}"
+    #     ruby_rgr_test__test_file="${ruby_rgr_test__t#$ruby_rgr_test__framework}"
+    #     ruby_rgr_test__test_file="${ruby_rgr_test__test_file#:}"
+
+    #     case $ruby_rgr_test__frameworks in
+    #         *"$ruby_rgr_test__framework"*) ;;
+    #         *)
+    #             ruby_rgr_test__frameworks="${ruby_rgr_test__frameworks:+$ruby_rgr_test__frameworks }$ruby_rgr_test__framework"
+    #             ;;
+    #     esac
+
+    #     if [ -n "$ruby_rgr_test__test_file" ]; then
+    #         ruby_rgr_test_one "$ruby_rgr_test__framework" "$ruby_rgr_test__test_file" "$2" || return 1
+    #     fi
+    # done
+
+    # for ruby_rgr_test__framework in $ruby_rgr_test__frameworks; do
+    #     ruby_rgr_test_all "$ruby_rgr_test__framework" "$2" || return 1
+    # done
+# }
 
 ruby_rgr_test_one()
 {

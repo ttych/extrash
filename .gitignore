@@ -13,3 +13,4 @@
 /bin/ruby_extrash.lib.sh
 /bin/uuid_gen
 /bin/editors.lib.sh
+/bin/git.lib.sh
