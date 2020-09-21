@@ -54,15 +54,16 @@ RGR_DEFAULT_PRUNE='-N .git -N .tox -N __pycache__ -N .pytest_cache -N .idea -N n
 
 rgr()
 {
-    rgr__usage="rgr [-N name_to_prune] [-P path_to_prune] [-R regex_to_prune] [-D: no_default] [-A: no_auto] [-C: no_check] [-t: test_autocreate]"
+    rgr__usage="rgr [-s strict-level] [-N name_to_prune] [-P path_to_prune] [-R regex_to_prune] [-D: no_default] [-A: no_auto] [-C: no_check] [-t: test_autocreate]"
     rgr__default_prune="$RGR_DEFAULT_PRUNE"
     rgr__prune=
     rgr__auto='-a'
     rgr__check='-c'
     rgr__test_autocreate='-T'
     rgr__extra=
+    rgr__strict='-s 1'
     OPTIND=1
-    while getopts :hDN:P:R:ACtv opt; do
+    while getopts :hDN:P:R:ACstv opt; do
         case $opt in
             h) printf "%s\n" "$rgr__usage"; return 0 ;;
             D) rgr__default_prune= ;;
@@ -71,13 +72,14 @@ rgr()
             R) rgr__prune="$rgr__prune -R $OPTARG" ;;
             A) rgr__auto='-A' ;;
             C) rgr__check='-C' ;;
+            s) rgr__strict='-s $OPTARG' ;;
             t) rgr__test_autocreate='-t' ;;
             v) rgr__extra="${rgr__extra:+$rgr__extra } -v"
         esac
     done
     shift $(($OPTIND - 1))
 
-    file_mon -s "$RGR_DELAY" -c "rgr_on $rgr__auto $rgr__check $rgr__test_autocreate \"%s\"" $rgr__default_prune $rgr__prune $rgr__extra "$@"
+    file_mon -s "$RGR_DELAY" -c "rgr_on $rgr__auto $rgr__strict $rgr__check $rgr__test_autocreate \"%s\"" $rgr__default_prune $rgr__prune $rgr__extra "$@"
 }
 
 rgr_timestamp()
@@ -95,12 +97,13 @@ rgr_cksum()
 rgr_on()
 {
     OPTIND=1
-    while getopts :aAcCtT opt; do
+    while getopts :aAcCs:tT opt; do
         case $opt in
             a) RGR_AUTO=TRUE ;;
             A) RGR_AUTO=FALSE ;;
             c) RGR_CHECK=TRUE ;;
             C) RGR_CHECK=FALSE ;;
+            s) RGR_STRICT_LEVEL=$OPTARG ;;
             t) RGR_TEST_AUTOCREATE=TRUE ;;
             T) RGR_TEST_AUTOCREATE=FALSE ;;
         esac
