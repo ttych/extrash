@@ -22,7 +22,6 @@ RUBY_RGR_SKIP_PATTERN='^db/schema.rb$'
 RUBY_RGR_RUBOCOP_AUTO='-a'
 RUBY_RGR_ERBLINT_AUTO='-a'
 RUBY_TEST_FRAMEWORKS='minitest rspec'
-RUBY_TEST_AUTOCREATE=FALSE
 RUBY_MINITEST_DIRS='test tests'
 RUBY_RSPEC_DIRS=spec
 
@@ -334,12 +333,18 @@ ruby_rgr_test_v2()
                         if [ -z "$ruby_rgr_test_v2__test_file" ] ; then
                             ruby_rgr_test_v2__tested=TRUE
                             : # just test all
-                        elif [ -r "$ruby_rgr_test_v2__test_file" ]; then
+                        else
+                            if [ ! -r "$ruby_rgr_test_v2__test_file" ] && $RGR_TEST_AUTOCREATE; then
+                                ruby_${ruby_rgr_test_v2__framework}_create_test_file "$ruby_rgr_test_v2__test_file"
+                            fi
+
+                            if [ -r "$ruby_rgr_test_v2__test_file" ]; then
                             ruby_rgr_test_v2__tested=TRUE
                             ruby_rgr_test_one "$ruby_rgr_test_v2__framework" "$ruby_rgr_test_v2__test_file" "$2" || return 1
-                        # else
-                        #     echo DBG: $ruby_rgr_test_v2__test_dir
-                        #     echo DBG: $ruby_rgr_test_v2__test_file
+                            # else
+                            #     echo DBG: $ruby_rgr_test_v2__test_dir
+                            #     echo DBG: $ruby_rgr_test_v2__test_file
+                            fi
                         fi
                     else
                         ruby_rgr_test_dont_know "$1" "$2" || return 1
@@ -513,6 +518,12 @@ ruby_minitest_identify_test()
     return 1
 }
 
+ruby_minitest_create_test_file()
+{
+    mkdir -p "${1%/*}" &&
+        touch "$1"
+}
+
 ruby_minitest()
 {
     ruby_rake test TEST="$1" ||
@@ -609,6 +620,12 @@ ruby_rspec_identify_test()
     [ -r "$ruby_rspec_identify_test" ] && return 0
 
     return 1
+}
+
+ruby_rspec_create_test_file()
+{
+    mkdir -p "${1%/*}" &&
+        touch "$1"
 }
 
 ruby_rspec()
