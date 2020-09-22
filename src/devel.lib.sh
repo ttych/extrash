@@ -52,18 +52,23 @@ RGR_CHECK=TRUE
 RGR_TEST_AUTOCREATE=FALSE
 RGR_DEFAULT_PRUNE='-N .git -N .tox -N __pycache__ -N .pytest_cache -N .idea -N node_modules -R .*/tmp/cache/.*'
 
+## Strict Level
+#  0 - best effort: ok on missing / ok on existent failure / ok on recommendation
+#  1 -              ok on missing / ko on existent failure / ok on recommendation
+#  2 -              ko on missing / ko on existent failure / ok on recommendation
+#  3 -              ko on missing / ko on existent failure / ko on recommendation
 rgr()
 {
-    rgr__usage="rgr [-s strict-level] [-N name_to_prune] [-P path_to_prune] [-R regex_to_prune] [-D: no_default] [-A: no_auto] [-C: no_check] [-t: test_autocreate]"
+    rgr__usage="rgr [-s: increase strict_level] [-S: reduce strict_level] [-N name_to_prune] [-P path_to_prune] [-R regex_to_prune] [-D: no_default] [-A: no_auto] [-C: no_check] [-t: test_autocreate]"
     rgr__default_prune="$RGR_DEFAULT_PRUNE"
     rgr__prune=
     rgr__auto='-a'
     rgr__check='-c'
     rgr__test_autocreate='-T'
     rgr__extra=
-    rgr__strict='-s 1'
+    rgr__strict_level=2
     OPTIND=1
-    while getopts :hDN:P:R:ACstv opt; do
+    while getopts :hDN:P:R:ACsStv opt; do
         case $opt in
             h) printf "%s\n" "$rgr__usage"; return 0 ;;
             D) rgr__default_prune= ;;
@@ -72,14 +77,15 @@ rgr()
             R) rgr__prune="$rgr__prune -R $OPTARG" ;;
             A) rgr__auto='-A' ;;
             C) rgr__check='-C' ;;
-            s) rgr__strict='-s $OPTARG' ;;
+            s) [ $rgr__strict_level -lt 3 ] && rgr__strict_level=$(($rgr__strict_level + 1)) ;;
+            S) [ $rgr__strict_level -gt 0 ] && rgr__strict_level=$(($rgr__strict_level - 1)) ;;
             t) rgr__test_autocreate='-t' ;;
             v) rgr__extra="${rgr__extra:+$rgr__extra } -v"
         esac
     done
     shift $(($OPTIND - 1))
 
-    file_mon -s "$RGR_DELAY" -c "rgr_on $rgr__auto $rgr__strict $rgr__check $rgr__test_autocreate \"%s\"" $rgr__default_prune $rgr__prune $rgr__extra "$@"
+    file_mon -s "$RGR_DELAY" -c "rgr_on $rgr__auto -s $rgr__strict_level $rgr__check $rgr__test_autocreate \"%s\"" $rgr__default_prune $rgr__prune $rgr__extra "$@"
 }
 
 rgr_timestamp()

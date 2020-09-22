@@ -18,8 +18,13 @@ FALSE()
 
 ########## ruby
 
+RUBY_RGR_SKIP_PATTERN='^db/schema.rb$'
 RUBY_RGR_RUBOCOP_AUTO='-a'
 RUBY_RGR_ERBLINT_AUTO='-a'
+RUBY_TEST_FRAMEWORKS='minitest rspec'
+RUBY_TEST_AUTOCREATE=FALSE
+RUBY_MINITEST_DIRS='test tests'
+RUBY_RSPEC_DIRS=spec
 
 ruby_bundle()
 {
@@ -159,7 +164,8 @@ gemfile_rgr()
 
 is_gemfile_lock_file()
 {
-    [ -d "$1" ] && return 1
+    [ -f "$1" ] || return 1
+    [ "$1" = "Gemfile.lock" ] || return 1
 
     is_git_tracked "$1" && return 0
     return 1
@@ -204,11 +210,27 @@ ruby_rgr_bundle_install()
 
 ruby_rgr()
 {
-    ruby_rgr_test "$@" &&
-        ruby_rgr_rubocop "$@" &&
-        ruby_rgr_reek "$@" &&
-        ruby_rgr_flay "$@" &&
-        ruby_rgr_flog "$@"
+    if expr "$1" : "$RUBY_RGR_SKIP_PATTERN" >/dev/null; then
+        return 0
+    fi
+
+    if ! ruby_rgr_test "$@"; then
+        [ $RGR_STRICT_LEVEL -ge 1 ] && return 1
+    fi
+    if ! ruby_rgr_rubocop "$@"; then
+        [ $RGR_STRICT_LEVEL -ge 1 ] && return 1
+    fi
+    if ! ruby_rgr_reek "$@"; then
+        [ $RGR_STRICT_LEVEL -ge 3 ] && return 1
+    fi
+    if ! ruby_rgr_flay "$@"; then
+        [ $RGR_STRICT_LEVEL -ge 3 ] && return 1
+    fi
+    if ! ruby_rgr_flog "$@"; then
+        [ $RGR_STRICT_LEVEL -ge 3 ] && return 1
+    fi
+
+    return 0
 }
 
 ruby_rgr_rubocop()
@@ -241,6 +263,11 @@ ruby_rgr_flog()
 
 ruby_rgr_test()
 {
+    ruby_rgr_test_v2 "$@"
+}
+
+ruby_rgr_test_v1()
+{
     ruby_rgr_test__frameworks=
 
     ruby_rgr_test__BIFS="$IFS"
@@ -257,9 +284,6 @@ ruby_rgr_test()
         esac
     done
     IFS=="$ruby_rgr_test__BIFS"
-
-    # for
-}
 
     # if ! ruby_test_identify "$1"; then
     #     "${2:-:}" "no test found for $1"
@@ -287,12 +311,62 @@ ruby_rgr_test()
     # for ruby_rgr_test__framework in $ruby_rgr_test__frameworks; do
     #     ruby_rgr_test_all "$ruby_rgr_test__framework" "$2" || return 1
     # done
-# }
+}
+
+ruby_rgr_test_v2()
+{
+    ruby_rgr_test_v2__tested=FALSE
+    ruby_rgr_test_v2__frameworks=
+
+    case "$1" in
+        db/*)
+            ;;
+        config/*)
+            ;;
+        *)
+            for ruby_rgr_test_v2__framework in $RUBY_TEST_FRAMEWORKS; do
+                if ruby_has_${ruby_rgr_test_v2__framework}; then
+                    ruby_rgr_test_v2__frameworks="$ruby_rgr_test_v2__frameworks $ruby_rgr_test_v2__framework"
+                    eval ruby_rgr_test_v2__test_dir=\"\$ruby_has_${ruby_rgr_test_v2__framework}\"
+
+                    if ruby_${ruby_rgr_test_v2__framework}_identify "$1" "$ruby_rgr_test_v2__test_dir"; then
+                        eval ruby_rgr_test_v2__test_file=\"\$ruby_${ruby_rgr_test_v2__framework}_identify\"
+                        if [ -z "$ruby_rgr_test_v2__test_file" ] ; then
+                            ruby_rgr_test_v2__tested=TRUE
+                            : # just test all
+                        elif [ -r "$ruby_rgr_test_v2__test_file" ]; then
+                            ruby_rgr_test_v2__tested=TRUE
+                            ruby_rgr_test_one "$ruby_rgr_test_v2__framework" "$ruby_rgr_test_v2__test_file" "$2" || return 1
+                        # else
+                        #     echo DBG: $ruby_rgr_test_v2__test_dir
+                        #     echo DBG: $ruby_rgr_test_v2__test_file
+                        fi
+                    else
+                        ruby_rgr_test_dont_know "$1" "$2" || return 1
+                    fi
+                fi
+            done
+
+            if ! $ruby_rgr_test_v2__tested; then
+                if [ $RGR_STRICT_LEVEL -ge 2 ]; then
+                    ruby_rgr_test_missing "$1" "$2"
+                    return 1
+                fi
+            fi
+
+            if [ -z "$ruby_rgr_test_v2__frameworks" ]; then
+                ruby_rgr_test_dont_know "$1" "$2" || return 1
+            fi
+
+            for ruby_rgr_test_v2__framework in $ruby_rgr_test_v2__frameworks; do
+                ruby_rgr_test_all "$ruby_rgr_test_v2__framework" "$2" || return 1
+            done
+            ;;
+    esac
+}
 
 ruby_rgr_test_one()
 {
-    [ "$2" = "NO_ONE" ] && return 0
-
     "${3:-:}" "test $2 ($1)"
     ruby_"$1" "$2"
 }
@@ -303,11 +377,20 @@ ruby_rgr_test_all()
     ruby_"${1}"_all
 }
 
+ruby_rgr_test_missing()
+{
+    "${2:-:}" "test MISSING for $1"
+    return 1
+}
+
+ruby_rgr_test_dont_know()
+{
+    "${2:-:}" "NO TEST RULES for $1"
+    return 1
+}
+
 
 ########## test
-
-RUBY_TEST_AUTOCREATE=FALSE
-_RUBY_TEST_FRAMEWORKS='minitest rspec'
 
 ruby_test_identify()
 {
@@ -388,15 +471,11 @@ ruby_test_frameworks()
     fi
 }
 
-
 ########## minitest
-
-_RUBY_MINITEST_DIR=test
-_RUBY_MINITEST_DIRS="test tests"
 
 ruby_has_minitest()
 {
-    for ruby_has_minitest in $_RUBY_MINITEST_DIRS; do
+    for ruby_has_minitest in $RUBY_MINITEST_DIRS; do
         [ -d "$ruby_has_minitest" ] && return 0
     done
     return 1
@@ -449,12 +528,57 @@ ruby_minitest_all()
 
 ########## rspec
 
-_RUBY_RSPEC_DIR=spec
-
 ruby_has_rspec()
 {
-    [ -d "$_RUBY_RSPEC_DIR" ] && return 0
+    for ruby_has_rspec in $RUBY_RSPEC_DIRS; do
+        [ -d "$ruby_has_rspec" ] && return 0
+    done
     return 1
+}
+
+ruby_rspec_identify()
+{
+    ruby_rspec_identify=
+
+    ruby_rspec_identify__dir="$2"
+    ruby_rspec_identify__file="$1"
+
+    ruby_rspec_identify__file_name="${1##*/}"
+    ruby_rspec_identify__file_path="${1%$ruby_rspec_identify__file_name}"
+    ruby_rspec_identify__file_path="${ruby_rspec_identify__file_path%/}"
+    ruby_rspec_identify__spec_name="${ruby_rspec_identify__file_name%.rb}_spec.rb"
+
+    case "$1" in
+        "$ruby_rspec_identify__dir"/spec_helper.rb|"$ruby_rspec_identify__dir"/rails_helper.rb)
+            ;;
+        "$ruby_rspec_identify__dir"/*_spec.rb)
+            ruby_rspec_identify="$1"
+            ;;
+        "$ruby_rspec_identify__dir"/*.rb)
+            if [ -r "$ruby_rspec_identify__file_path/$ruby_rspec_identify__spec_name" ]; then
+                ruby_rspec_identify="$ruby_rspec_identify__file_path/$ruby_rspec_identify__spec_name"
+            else
+                ruby_rspec_identify="$ruby_rspec_identify__file_path"
+            fi
+            ;;
+        *.rb)
+            ruby_rspec_identify__file_path_first="${ruby_rspec_identify__file_path%%/*}"
+            ruby_rspec_identify__file_path_sub="${ruby_rspec_identify__file_path#$ruby_rspec_identify__file_path_first/}"
+
+            ruby_rspec_identify="$ruby_rspec_identify__dir/$ruby_rspec_identify__file_path/$ruby_rspec_identify__spec_name"
+            [ -r "$ruby_rspec_identify" ] && return 0
+
+            ruby_rspec_identify="$ruby_rspec_identify__dir/$ruby_rspec_identify__file_path_sub/$ruby_rspec_identify__spec_name"
+            [ -r "$ruby_rspec_identify" ] && return 0
+
+            # try along ?
+
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
 }
 
 ruby_rspec_identify_test()
