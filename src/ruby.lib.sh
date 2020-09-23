@@ -188,7 +188,15 @@ is_embedded_ruby_file()
 
 embedded_ruby_rgr()
 {
-    ruby_rgr_erblint "$@"
+    if ! ruby_rgr_test "$@"; then
+        [ $RGR_STRICT_LEVEL -ge 1 ] && return 1
+    fi
+
+    if ! ruby_rgr_erblint "$@"; then
+        [ $RGR_STRICT_LEVEL -ge 1 ] && return 1
+    fi
+
+    return 0
 }
 
 ruby_rgr_erblint()
@@ -320,8 +328,8 @@ ruby_rgr_test_v2()
     case "$1" in
         db/*)
             ;;
-        config/*)
-            ;;
+        # config/*)
+        #     ;;
         *)
             for ruby_rgr_test_v2__framework in $RUBY_TEST_FRAMEWORKS; do
                 if ruby_has_${ruby_rgr_test_v2__framework}; then
@@ -560,6 +568,8 @@ ruby_rspec_identify()
     ruby_rspec_identify__spec_name="${ruby_rspec_identify__file_name%.rb}_spec.rb"
 
     case "$1" in
+        config/*)
+            ;;
         "$ruby_rspec_identify__dir"/spec_helper.rb|"$ruby_rspec_identify__dir"/rails_helper.rb)
             ;;
         "$ruby_rspec_identify__dir"/*_spec.rb)
@@ -571,6 +581,8 @@ ruby_rspec_identify()
             else
                 ruby_rspec_identify="$ruby_rspec_identify__file_path"
             fi
+            ;;
+        *.erb)
             ;;
         *.rb)
             ruby_rspec_identify__file_path_first="${ruby_rspec_identify__file_path%%/*}"
