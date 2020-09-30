@@ -21,9 +21,11 @@ FALSE()
 RUBY_RGR_SKIP_PATTERN='^db/schema.rb$'
 RUBY_RGR_RUBOCOP_AUTO='-a'
 RUBY_RGR_ERBLINT_AUTO='-a'
-RUBY_TEST_FRAMEWORKS='minitest rspec'
+RUBY_TEST_FRAMEWORKS='minitest rspec cucumber'
+RUBY_FEATURE_FRAMEWORKS='cucumber'
 RUBY_MINITEST_DIRS='test tests'
-RUBY_RSPEC_DIRS=spec
+RUBY_RSPEC_DIR=spec
+RUBY_CUCUMBER_DIR=features
 
 ruby_bundle()
 {
@@ -131,7 +133,7 @@ ruby_bundle_install()
 
 ########## rgr
 
-DEVEL_LANG="${DEVEL_LANG:+$DEVEL_LANG }ruby gemfile gemfile_lock embedded_ruby"
+DEVEL_LANG="${DEVEL_LANG:+$DEVEL_LANG }ruby gemfile gemfile_lock embedded_ruby ruby_feature"
 
 is_ruby_file()
 {
@@ -215,6 +217,45 @@ ruby_rgr_bundle_install()
     ruby_bundle_install
 }
 
+is_ruby_feature_file()
+{
+    [ -d "$1" ] && return 1
+
+    case "$1" in
+        *.feature)
+            return 0
+    esac
+    return 1
+}
+
+ruby_feature_rgr()
+{
+    if expr "$1" : "$RUBY_FEATURE_RGR_SKIP_PATTERN" >/dev/null; then
+        return 0
+    fi
+
+    if ! ruby_feature_rgr_test "$@"; then
+        [ $RGR_STRICT_LEVEL -ge 1 ] && return 1
+    fi
+    if ! ruby_feature_rgr_lint "$@"; then
+        [ $RGR_STRICT_LEVEL -ge 1 ] && return 1
+    fi
+
+}
+
+ruby_feature_rgr_test()
+{
+    ruby_rgr_test_v2__FRAMEWORKS="$RUBY_FEATURE_FRAMEWORKS" ruby_rgr_test_v2 "$@"
+}
+
+ruby_feature_rgr_lint()
+{
+    "${2:-:}" "gherkin-lint $1"
+
+    # FIXME: find correct gherkin linter
+    :
+}
+
 ruby_rgr()
 {
     if expr "$1" : "$RUBY_RGR_SKIP_PATTERN" >/dev/null; then
@@ -270,7 +311,7 @@ ruby_rgr_flog()
 
 ruby_rgr_test()
 {
-    ruby_rgr_test_v2 "$@"
+    ruby_rgr_test_v2__FRAMEWORKS="$RUBY_TEST_FRAMEWORKS" ruby_rgr_test_v2 "$@"
 }
 
 ruby_rgr_test_v1()
@@ -331,12 +372,11 @@ ruby_rgr_test_v2()
         # config/*)
         #     ;;
         *)
-            for ruby_rgr_test_v2__framework in $RUBY_TEST_FRAMEWORKS; do
+            for ruby_rgr_test_v2__framework in ${ruby_rgr_test_v2__FRAMEWORKS:-$RUBY_TEST_FRAMEWORKS}; do
                 if ruby_has_${ruby_rgr_test_v2__framework}; then
                     ruby_rgr_test_v2__frameworks="$ruby_rgr_test_v2__frameworks $ruby_rgr_test_v2__framework"
-                    eval ruby_rgr_test_v2__test_dir=\"\$ruby_has_${ruby_rgr_test_v2__framework}\"
 
-                    if ruby_${ruby_rgr_test_v2__framework}_identify "$1" "$ruby_rgr_test_v2__test_dir"; then
+                    if ruby_${ruby_rgr_test_v2__framework}_identify "$1"; then
                         eval ruby_rgr_test_v2__test_file=\"\$ruby_${ruby_rgr_test_v2__framework}_identify\"
                         if [ -z "$ruby_rgr_test_v2__test_file" ] ; then
                             ruby_rgr_test_v2__tested=TRUE
@@ -354,8 +394,8 @@ ruby_rgr_test_v2()
                             #     echo DBG: $ruby_rgr_test_v2__test_file
                             fi
                         fi
-                    else
-                        ruby_rgr_test_dont_know "$1" "$2" || return 1
+                    # else
+                    #     ruby_rgr_test_dont_know "$1" "$2" || return 1
                     fi
                 fi
             done
@@ -549,7 +589,7 @@ ruby_minitest_all()
 
 ruby_has_rspec()
 {
-    for ruby_has_rspec in $RUBY_RSPEC_DIRS; do
+    for ruby_has_rspec in $RUBY_RSPEC_DIR; do
         [ -d "$ruby_has_rspec" ] && return 0
     done
     return 1
@@ -559,7 +599,7 @@ ruby_rspec_identify()
 {
     ruby_rspec_identify=
 
-    ruby_rspec_identify__dir="$2"
+    ruby_rspec_identify__dir="$RUBY_RSPEC_DIR"
     ruby_rspec_identify__file="$1"
 
     ruby_rspec_identify__file_name="${1##*/}"
@@ -569,6 +609,12 @@ ruby_rspec_identify()
 
     case "$1" in
         config/*)
+            ;;
+        features/*)
+            return 1
+            ;;
+        test/*|tests/*)
+            return 1
             ;;
         "$ruby_rspec_identify__dir"/spec_helper.rb|"$ruby_rspec_identify__dir"/rails_helper.rb)
             ;;
@@ -658,6 +704,72 @@ ruby_rspec()
 ruby_rspec_all()
 {
     ruby_rspec
+}
+
+
+########## cucumber
+
+ruby_has_cucumber_cmd()
+{
+    which cucumber 2>/dev/null >/dev/null
+}
+
+ruby_has_cucumber()
+{
+    ruby_has_cucumber_cmd || return 1
+
+    for ruby_has_rspec in $RUBY_CUCUMBER_DIR; do
+        [ -d "$ruby_has_rspec" ] && return 0
+    done
+    return 1
+}
+
+ruby_cucumber_identify()
+{
+    ruby_cucumber_identify=
+
+    ruby_cucumber_identify__dir="$RUBY_CUCUMBER_DIR"
+    ruby_cucumber_identify__file="$1"
+
+    case "$1" in
+        spec/*)
+            return 1
+            ;;
+        test/*|tests/*)
+            return 1
+            ;;
+        "$ruby_cucumber_identify__dir"/support/*.rb)
+            ;;
+        "$ruby_cucumber_identify__dir"/step_definitions/*.rb)
+            ;;
+        "$ruby_cucumber_identify__dir"/*.feature)
+            ruby_cucumber_identify="$1"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+ruby_cucumber()
+{
+    for ruby_cucumber__shortcut in ./bin/cucumber ./script/cucumber; do
+        [ -x "$ruby_cucumber__shortcut" ] || continue
+        ./"$ruby_cucumber__shortcut" "$@"
+        return "$?"
+    done
+
+    ruby_has_cucumber_cmd 2>/dev/null >/dev/null || {
+        echo >&2 "missing cucumber command"
+        return 0
+    }
+
+    ruby_exec cucumber "$@"
+}
+
+ruby_cucumber_all()
+{
+    ruby_cucumber
 }
 
 
