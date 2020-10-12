@@ -72,7 +72,7 @@ gpart_root()
             bios) gpart_root_add_bios "$gpart_root__d" || return 1 ;;
         esac
 
-        gpart_root_add_zfs "$gpart_root__d" os || return 1
+        gpart_root_add_zfs "$gpart_root__d" root || return 1
     done
 }
 
@@ -130,7 +130,7 @@ zfs_root_mirror()
 
     zfs_root_mirror__ds=
     for zfs_root_mirror__d; do
-        zfs_root_mirror__ds="$zfs_root_mirror__ds /dev/gpt/${zfs_root_mirror__d}-os"
+        zfs_root_mirror__ds="$zfs_root_mirror__ds /dev/gpt/${zfs_root_mirror__d}-root"
     done
     zpool create -f -o altroot=$zfs_root_mirror__mountpoint -O compress=lz4 -O atime=off -m none $zfs_root_mirror__pool mirror $zfs_root_mirror__ds
 }
@@ -222,6 +222,8 @@ zfs_root_datasets()
     zfs create                                         $zfs_root_datasets__pool/os/fbsd/var/run
     zfs create -o setuid=off                           $zfs_root_datasets__pool/os/fbsd/var/tmp
     zfs create -o mountpoint=/home                     $zfs_root_datasets__pool/home
+    zfs create                                         $zfs_root_datasets__pool/home/root
+    zfs create                                         $zfs_root_datasets__pool/home/admin
     zfs create -o mountpoint=/service                  $zfs_root_datasets__pool/service
 
     (cd $zfs_root_datasets__mountpoint/usr && ln -sf /home)
@@ -237,6 +239,12 @@ zfs_root_datasets()
 
 
 ### FreeBSD
+
+freebsd_zfs()
+{
+    grep 'zfs_enable="YES"' /etc/rc.conf ||
+        echo 'zfs_enable="YES"' >> /etc/rc.conf
+}
 
 freebsd_root()
 {
@@ -314,6 +322,7 @@ freebsd_bootcode()
     done
 }
 
+
 freebsd()
 {
     freebsd__action="$1"
@@ -322,6 +331,7 @@ freebsd()
     case "$freebsd__action" in
         root)     freebsd_root "$@" ;;
         bootcode) freebsd_bootcode "$@" ;;
+        zfs)      freebsd_zfs "$@" ;;
         *)
             echo >&2 "unsupported freebsd action \"$freebsd\""
             return 1
