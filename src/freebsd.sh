@@ -99,6 +99,12 @@ gpart_root_add_zfs()
 
 ### ZFS
 
+zfs_enable()
+{
+    grep 'zfs_enable="YES"' /etc/rc.conf ||
+        echo 'zfs_enable="YES"' >> /etc/rc.conf
+}
+
 zfs_setup()
 {
     kldstat -m zfs || kldload zfs || return 1
@@ -234,9 +240,6 @@ zfs_root_datasets()
     chmod 1777 $zfs_root_datasets__mountpoint/var/tmp
 
     zpool set bootfs=$zfs_root_datasets__pool/os/fbsd $zfs_root_datasets__pool
-
-    mkdir -p "$freebsd_root__mountpoint/etc"
-    echo 'zfs_enable="YES"' >> "$freebsd_root__mountpoint/etc/rc.conf"
 }
 
 
@@ -279,12 +282,6 @@ pkg_install_minimum()
 
 
 ### FreeBSD
-
-freebsd_zfs()
-{
-    grep 'zfs_enable="YES"' /etc/rc.conf ||
-        echo 'zfs_enable="YES"' >> /etc/rc.conf
-}
 
 freebsd_root()
 {
@@ -364,7 +361,8 @@ freebsd_bootcode()
 
 freebsd_bootstrap()
 {
-    pw_user_a "$@" &&
+    zfs_enable &&
+        pw_user_a "$@" &&
         pkg_install_minimum
 }
 
@@ -376,7 +374,6 @@ freebsd()
     case "$freebsd__action" in
         root)      freebsd_root "$@" ;;
         bootcode)  freebsd_bootcode "$@" ;;
-        zfs)       freebsd_zfs "$@" ;;
         bootstrap) freebsd_bootstrap "$@" ;;
         *)
             echo >&2 "unsupported freebsd action \"$freebsd_action\""
