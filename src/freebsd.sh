@@ -228,7 +228,7 @@ zfs_root_datasets()
     zfs create                                         $zfs_root_datasets__pool/os/fbsd/var/run
     zfs create -o setuid=off                           $zfs_root_datasets__pool/os/fbsd/var/tmp
     zfs create -o mountpoint=/home                     $zfs_root_datasets__pool/home
-    zfs create -o mountpoint=/root                     $zfs_root_datasets__pool/home/root
+    zfs create                                         $zfs_root_datasets__pool/home/root
     zfs create                                         $zfs_root_datasets__pool/home/admin
     zfs create -o mountpoint=/service                  $zfs_root_datasets__pool/service
 
