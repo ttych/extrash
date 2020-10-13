@@ -222,12 +222,14 @@ zfs_root_datasets()
     zfs create                                         $zfs_root_datasets__pool/os/fbsd/var/run
     zfs create -o setuid=off                           $zfs_root_datasets__pool/os/fbsd/var/tmp
     zfs create -o mountpoint=/home                     $zfs_root_datasets__pool/home
-    zfs create                                         $zfs_root_datasets__pool/home/root
+    zfs create -o mountpoint=/root                     $zfs_root_datasets__pool/home/root
     zfs create                                         $zfs_root_datasets__pool/home/admin
     zfs create -o mountpoint=/service                  $zfs_root_datasets__pool/service
 
     (cd $zfs_root_datasets__mountpoint/usr && ln -sf /home)
 
+    chmod 0700 $zfs_root_datasets__mountpoint/root
+    chmod 0700 $zfs_root_datasets__mountpoint/home/admin
     chmod 1777 $zfs_root_datasets__mountpoint/tmp
     chmod 1777 $zfs_root_datasets__mountpoint/var/tmp
 
@@ -235,6 +237,44 @@ zfs_root_datasets()
 
     mkdir -p "$freebsd_root__mountpoint/etc"
     echo 'zfs_enable="YES"' >> "$freebsd_root__mountpoint/etc/rc.conf"
+}
+
+
+### pw
+
+pw_user_a()
+{
+    pw_user_a__user=admin
+    pw_user_a__uid=2001
+    pw_user_a__shell=/bin/sh
+
+    pw group show admin ||
+        pw group add -n $pw_user_a__user -g $pw_user_a__uid ||
+        return 1
+
+    pw user show admin ||
+        pw user add -n $pw_user_a__user -c $pw_user_a__user -u $pw_user_a__uid -g $pw_user_a__uid -s /bin/sh -w no ||
+        return 1
+
+    pw groupmod wheel -m admin || return 1
+
+    mkdir -p /home/admin/.ssh
+
+    chown -R admin:admin /home/admin || return 1
+    chmod 0700 /home/admin || return 1
+    chmod 0700 /home/admin/.ssh || return 1
+
+    mkdir -p /usr/local/etc/sudoers.d
+    echo '%admin ALL=(ALL) NOPASSWD: ALL' > /usr/local/etc/sudoers.d/admin
+    chmod 640 /usr/local/etc/sudoers.d/admin
+}
+
+
+### pkg
+
+pkg_install_minimum()
+{
+    pkg install -y python sudo
 }
 
 
@@ -322,6 +362,11 @@ freebsd_bootcode()
     done
 }
 
+freebsd_bootstrap()
+{
+    pw_user_a "$@" &&
+        pkg_install_minimum
+}
 
 freebsd()
 {
@@ -329,11 +374,12 @@ freebsd()
     shift
 
     case "$freebsd__action" in
-        root)     freebsd_root "$@" ;;
-        bootcode) freebsd_bootcode "$@" ;;
-        zfs)      freebsd_zfs "$@" ;;
+        root)      freebsd_root "$@" ;;
+        bootcode)  freebsd_bootcode "$@" ;;
+        zfs)       freebsd_zfs "$@" ;;
+        bootstrap) freebsd_bootstrap "$@" ;;
         *)
-            echo >&2 "unsupported freebsd action \"$freebsd\""
+            echo >&2 "unsupported freebsd action \"$freebsd_action\""
             return 1
             ;;
     esac
