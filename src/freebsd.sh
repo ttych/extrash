@@ -205,8 +205,8 @@ zfs_root_datasets()
         return 1
     }
 
-    zfs create -o mountpoint=none $zfs_root_datasets__pool/os
-    zfs create -o mountpoint=/    $zfs_root_datasets__pool/os/fbsd
+    zfs create -o mountpoint=none                      $zfs_root_datasets__pool/os
+    zfs create -o mountpoint=/                         $zfs_root_datasets__pool/os/fbsd
 
     # zfs mount $zfs_root_datasets__pool/os/fbsd
 
@@ -231,6 +231,10 @@ zfs_root_datasets()
     zfs create                                         $zfs_root_datasets__pool/home/root
     zfs create                                         $zfs_root_datasets__pool/home/admin
     zfs create -o mountpoint=/service                  $zfs_root_datasets__pool/service
+
+    zfs set reservation=50G                            $zfs_root_datasets__pool/os
+    zfs set reservation=25G                            $zfs_root_datasets__pool/os/fbsd
+    zfs set quota=15G                                  $zfs_root_datasets__pool/os/fbsd/var/log
 
     (cd $zfs_root_datasets__mountpoint/usr && ln -sf /home)
 
