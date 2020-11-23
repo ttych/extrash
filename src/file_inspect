@@ -1,7 +1,1 @@
-#!/bin/sh
-# -*- mode: sh -*-
-
-#%%load%% file.lib.sh
-
-
-file_inspect "$@"
+./ruby_extrash.lib.sh

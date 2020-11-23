@@ -820,3 +820,49 @@ environment.plugins.append(
     grep '^@import "bootstrap/scss/bootstrap";' app/assets/stylesheets/application.scss >/dev/null ||
         echo '@import "bootstrap/scss/bootstrap";' >> app/assets/stylesheets/application.scss
 }
+
+
+########## gem
+
+gem_install_capistrano()
+{
+    gem install capistrano "$@"
+}
+
+gem_install_quality()
+{
+    gem install rubocop reek flay flog erb_lint "$@"
+}
+
+gem_install_rack()
+{
+    gem install rack shotgun
+}
+
+gem_install_rails()
+{
+    gem install rails rails-erb-lint "$@"
+}
+
+gem_install_rspec()
+{
+    gem install rspec "$@"
+}
+
+gem_install_sinatra()
+{
+    gem install sinatra "$@"
+}
+
+gem_install_utils()
+{
+    gem install quick_and_ruby "$@"
+}
+
+gem_install_all()
+{
+    for gem_pack in capistrano quality rack rails rspec sinatra utils; do
+        echo "> gem install $gem_pack"
+        gem_install_$gem_pack
+    done
+}
