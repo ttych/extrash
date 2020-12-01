@@ -13,6 +13,6 @@
 /bin/ruby_extrash.lib.sh
 /bin/uuid_gen
 /bin/editors.lib.sh
-/bin/git.lib.sh
 /bin/freebsd.sh
 /bin/game_age3_setup.sh
+/bin/git*

@@ -1,6 +1,10 @@
 #!/bin/sh
 # -*- mode: sh -*-
 
+SCRIPT_NAME="${0##*/}"
+SCRIPT_RPATH="${0%$SCRIPT_NAME}"
+SCRIPT_PATH=`cd "${SCRIPT_RPATH:-.}" && pwd`
+
 
 GIT=git
 
@@ -119,6 +123,10 @@ _git_clone()
     fi
     git clone $_git_clone__opts "$1" $_git_clone__target
 }
+git_clone()
+{
+    _git_clone "$@"
+}
 
 _git_url_to_name()
 {
@@ -201,3 +209,11 @@ is_git_tracked()
 
     git ls-files --error-unmatch "$is_git_tracked__file" >/dev/null 2>/dev/null
 )
+
+
+
+### main
+
+case "$SCRIPT_NAME" in
+    git_*) "$SCRIPT_NAME" "$@" ;;
+esac
