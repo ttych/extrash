@@ -165,14 +165,17 @@ _git_prompt()
     [ "$_git_info__untracked" = true ] &&
         _git_prompt__status="${_git_prompt__status}${_git_prompt__cb}u"
 
-    _git_prompt__branch_suffix=
+    _git_prompt__branch="${_git_info__branch:-???}"
+    case "$_git_prompt__branch" in
+        master|"???") _git_prompt__branch="${_git_prompt__cko}${_git_prompt__branch}${_git_prompt__cb}" ;;
+    esac
     if [ "$_git_info__detached" = true ]; then
-        _git_prompt__branch_suffix="(d)"
+        _git_prompt__branch="${_git_prompt__branch:-???}(d)"
     fi
 
     [ "$_git_info__ignored" = true ] && _git_info__ignored=ignored
 
-    _git_prompt="${_git_prompt__cb}${_git_prompt__git_name_prefix}${_git_info__git_name}:${_git_info__branch:-???}${_git_prompt__branch_suffix}${_git_prompt__status:+:$_git_prompt__status}${_git_prompt__cr}"
+    _git_prompt="${_git_prompt__cb}${_git_prompt__git_name_prefix}${_git_info__git_name}:${_git_prompt__branch}${_git_prompt__status:+:$_git_prompt__status}${_git_prompt__cr}"
 
     [ "$_git_info__ignored" = true ] &&
         _git_prompt_alt="${_git_prompt_alt:+$_git_prompt_alt }ignored"
