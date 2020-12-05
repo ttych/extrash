@@ -1,7 +1,7 @@
 # builded files
 /bin/devel.lib.sh
-/bin/ruby.lib.sh
-/bin/python.lib.sh
+/bin/ruby_dev.lib.sh
+/bin/python_dev.lib.sh
 /bin/file.lib.sh
 /bin/file_inspect
 /bin/cert.lib.sh
